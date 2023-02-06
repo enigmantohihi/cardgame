@@ -8,28 +8,51 @@ const UIROOT_POS = { x: 625, y: 0 };
 const DECK_SIZE = { width: 90, height: 125.72 };
 const DECK_POS = { x: 480, y: 20 };
 // 生成する要素のid名
-const deck_index_input = "draw_index_input";
-const draw_radio = "draw_radio";
-const draw_button = "draw_button";
-const back_index_input = "back_index_input";
-const back_radio = "back_radio";
-const back_button = "buck_button";
-const show_radio = "show_radio";
-const show_button = "show_button";
-const deck_list_modal = "deck_list_modal";
-const modal_selected_button = "modal_selected_button";
-const zoom_overlay = "zoom_overlay";
-const zoom_img = "zoom_img";
+const input_file_id = "input_file";
+const deck_count_text_id = "deck_count_text";
+const deck_index_input_id = "draw_index_input";
+const draw_radio_id = "draw_radio";
+const draw_button_id = "draw_button";
+const back_index_input_id = "back_index_input";
+const back_radio_id = "back_radio";
+const back_button_id = "buck_button";
+const show_radio_id = "show_radio";
+const show_button_id = "show_button";
+const deck_list_modal_id = "deck_list_modal";
+const modal_selected_button_id = "modal_selected_button";
+const zoom_overlay_id = "zoom_overlay";
+const zoom_img_id = "zoom_img";
 //
 window.addEventListener("load", () => {
-    start_board();
+    // start_board();
+});
+window.addEventListener("keyup", function (e) {
+    if (e.key === 'a' || e.key === 'A') {
+        start_board();
+    }
+    else if (e.key === 'e' || e.key === 'E') {
+        off_board();
+    }
 });
 function start_board() {
     // root要素
-    const root = document.getElementsByClassName("container")[0];
+    const root = document.getElementById("board_root");
+    while (root.firstChild) {
+        root.firstChild.remove();
+    }
+    ;
     create_board(root, 0);
     root.appendChild(document.createElement("hr"));
     create_board(root, 1);
+    root.appendChild(document.createElement("hr"));
+    create_input_file(root);
+}
+function off_board() {
+    const root = document.getElementById("board_root");
+    while (root.firstChild) {
+        root.firstChild.remove();
+    }
+    ;
 }
 function create_board(root, type = 0) {
     // board要素
@@ -69,22 +92,41 @@ function create_board(root, type = 0) {
     const deck_pos = (type == 1) ? DECK_POS : reverse_pos(SCREEN_SIZE, DECK_SIZE, DECK_POS);
     set_element_pos(deck, deck_pos);
     set_element_size(deck, DECK_SIZE);
+    const deck_parent = document.createElement("div");
+    deck_parent.className = "h-50 my-1 text-center";
+    const deck_text = document.createElement("p");
+    deck_text.className = "mt-3";
+    deck_text.textContent = "残り";
+    const count_text = document.createElement("p");
+    count_text.id = deck_count_text_id + type;
+    count_text.textContent = "枚";
+    deck_parent.appendChild(deck_text);
+    deck_parent.appendChild(count_text);
+    deck.appendChild(deck_parent);
     screen.appendChild(deck);
     console.log("deck pos=", get_element_pos(deck));
+}
+function create_input_file(parent) {
+    // デッキファイル入力
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.id = input_file_id;
+    parent.appendChild(input);
 }
 function create_ui(ui_root) {
     const parent = document.createElement("div");
     parent.classList.add("text-center");
-    create_input_number(parent, deck_index_input);
-    create_radio(parent, draw_radio, "表", "裏");
-    create_button(parent, draw_button, "引く");
+    create_input_number(parent, deck_index_input_id);
+    create_radio(parent, draw_radio_id, "表", "裏");
+    create_button(parent, draw_button_id, "引く");
     parent.appendChild(document.createElement("hr"));
-    create_input_number(parent, back_index_input);
-    create_radio(parent, back_radio, "上", "下");
-    create_button(parent, back_button, "戻す");
+    create_input_number(parent, back_index_input_id);
+    create_radio(parent, back_radio_id, "上", "下");
+    create_button(parent, back_button_id, "戻す");
     parent.appendChild(document.createElement("hr"));
-    create_radio(parent, show_radio, "表", "裏");
-    create_button(parent, show_button, "一覧", true);
+    create_radio(parent, show_radio_id, "表", "裏");
+    create_button(parent, show_button_id, "一覧", true);
     ui_root.appendChild(parent);
 }
 function create_input_number(parent, name) {
@@ -126,7 +168,7 @@ function create_radio(parent, name, text1, text2) {
 function create_button(parent, name, text, modal = false) {
     if (modal) {
         const div = document.createElement("div");
-        const button = `<button id="${name}" type="button" class="btn btn-primary w-80 mb-1" data-bs-toggle="modal" data-bs-target="#${deck_list_modal}">${text}</button>`;
+        const button = `<button id="${name}" type="button" class="btn btn-primary w-80 mb-1" data-bs-toggle="modal" data-bs-target="#${deck_list_modal_id}">${text}</button>`;
         div.innerHTML = button;
         parent.appendChild(div);
     }
@@ -142,7 +184,7 @@ function create_button(parent, name, text, modal = false) {
 function create_decklist_modal(parent) {
     const div = document.createElement("div");
     const label = "deck_list_modal_label";
-    const modal = ` <div class="modal fade" id="${deck_list_modal}" tabindex="-1" data-bs-backdrop="static" aria-labelledby="${label}" aria-hidden="true">
+    const modal = ` <div class="modal fade" id="${deck_list_modal_id}" tabindex="-1" data-bs-backdrop="static" aria-labelledby="${label}" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -159,7 +201,7 @@ function create_decklist_modal(parent) {
                     </div>
                     <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button id="${modal_selected_button}" type="button" class="btn btn-primary" data-bs-dismiss="modal">完了</button>
+                    <button id="${modal_selected_button_id}" type="button" class="btn btn-primary" data-bs-dismiss="modal">完了</button>
                     </div>
                 </div>
             </div>
@@ -169,10 +211,10 @@ function create_decklist_modal(parent) {
 }
 function create_overlay(parent) {
     const overlay = document.createElement("div");
-    overlay.id = zoom_overlay;
+    overlay.id = zoom_overlay_id;
     overlay.className = "zoom_overlay";
     const img = document.createElement("img");
-    img.id = zoom_img;
+    img.id = zoom_img_id;
     img.className = "zoom_img";
     overlay.appendChild(img);
     parent.appendChild(overlay);
