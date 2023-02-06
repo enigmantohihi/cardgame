@@ -11,6 +11,8 @@ const DECK_SIZE: Size = { width:90, height:125.72 };
 const DECK_POS: Position = { x:480, y:20 };
 
 // 生成する要素のid名
+const board_root_id = "board_root";
+
 const input_file_id = "input_file";
 
 const deck_count_text_id = "deck_count_text";
@@ -39,14 +41,14 @@ window.addEventListener("load",() => {
 window.addEventListener("keyup", function(e) {
     if(e.key === 'a' || e.key === 'A'){
         start_board();
-    } else if(e.key === 'e' || e.key === 'E'){
+    } else if(e.key === 's' || e.key === 'S'){
         off_board();
     }
 });
 
 function start_board() {
     // root要素
-    const root = <Element>document.getElementById("board_root");
+    const root = <Element>document.getElementById(board_root_id);
     while (root.firstChild) { root.firstChild.remove();};
     create_board(root,0);
     root.appendChild(document.createElement("hr"));
@@ -56,7 +58,7 @@ function start_board() {
 }
 
 function off_board() {
-    const root = <Element>document.getElementById("board_root");
+    const root = <Element>document.getElementById(board_root_id);
     while (root.firstChild) { root.firstChild.remove();};
 }
 

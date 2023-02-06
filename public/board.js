@@ -8,6 +8,7 @@ const UIROOT_POS = { x: 625, y: 0 };
 const DECK_SIZE = { width: 90, height: 125.72 };
 const DECK_POS = { x: 480, y: 20 };
 // 生成する要素のid名
+const board_root_id = "board_root";
 const input_file_id = "input_file";
 const deck_count_text_id = "deck_count_text";
 const deck_index_input_id = "draw_index_input";
@@ -30,13 +31,13 @@ window.addEventListener("keyup", function (e) {
     if (e.key === 'a' || e.key === 'A') {
         start_board();
     }
-    else if (e.key === 'e' || e.key === 'E') {
+    else if (e.key === 's' || e.key === 'S') {
         off_board();
     }
 });
 function start_board() {
     // root要素
-    const root = document.getElementById("board_root");
+    const root = document.getElementById(board_root_id);
     while (root.firstChild) {
         root.firstChild.remove();
     }
@@ -48,7 +49,7 @@ function start_board() {
     create_input_file(root);
 }
 function off_board() {
-    const root = document.getElementById("board_root");
+    const root = document.getElementById(board_root_id);
     while (root.firstChild) {
         root.firstChild.remove();
     }
