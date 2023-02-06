@@ -20,9 +20,16 @@ header {
     background-color: rgb(0, 128, 255);
 }
 
+.board {
+    position: relative;
+}
+
 .screen {
-    width: 600px;
-    height: 500px;
+    position: absolute;
+}
+
+.ui_root {
+    position: absolute;
 }
 
 .card {
@@ -37,15 +44,7 @@ header {
 }
 
 .deck {
-    position: relative;
-    width: 90px;
-    height: 124px;
-}
-
-.ui_box {
-    position: relative;
-    width: 90px;
-    height: 480px;
+    position: absolute;
 }
 
 .modal {
