@@ -165,3 +165,20 @@ function set_room(room:any, parent:Element) {
     parent.appendChild(row);
 
 }
+/** ユーザー名を取得 */
+function get_username() {
+    const username_text_box = <HTMLInputElement>document.getElementById(username_textbox_id);
+    const user_name = String(username_text_box.value);
+    return user_name;
+}
+function set_username(name: string) {
+    const username_text_box = <HTMLInputElement>document.getElementById(username_textbox_id);
+    username_text_box.value = name;
+}
+
+/** ルーム名を取得 */
+function get_roomname() {
+    const roomname_text_box = <HTMLInputElement>document.getElementById(roomname_textbox_id);
+    const room_name = String(roomname_text_box.value);
+    return room_name;
+}

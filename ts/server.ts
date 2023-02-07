@@ -17,11 +17,10 @@ app.get("/", (req,res) => {
 
 interface User {
     id: string,
-    user_name: string,
-    icon: number
+    username: string,
 }
 interface Room  {
-    room_name: string,
+    roomname: string,
     user_ids: string[]
 }
 
@@ -45,25 +44,24 @@ io.on("connection", (socket: socketio.Socket) => {
     console.log(`[connection] socket.id:${socket.id}`);
 
     // ユーザーにIDを渡す
-    io.to(socket.id).emit("send_id", socket.id);
+    io.to(socket.id).emit("receive_id", socket.id);
 
     // ルーム一覧を渡す
     io.emit("update_rooms", rooms);
 
     // Room接続時
-    socket.on("join", (data) => {
+    socket.on("create_room", (data) => {
         // Room名やユーザー名を取得
-        console.log("[join] ", data);
+        console.log("[create_room] ", data);
         // ユーザー作成
         const user: User = {
             id: socket.id,
-            user_name: data.user_name,
-            icon: data.icon
+            username: data.username,
         }
-        const room_name = data.room_name;
+        const roomname = data.roomname;
 
         // 部屋があるか検索
-        const room = get_room(room_name);
+        const room = get_room(roomname);
         if (room) {
             // 既に部屋があるときの処理
 
@@ -71,7 +69,7 @@ io.on("connection", (socket: socketio.Socket) => {
         } else {
             // まだ部屋がないときの処理
 
-            const room: Room = {room_name: room_name, user_ids:[]};
+            const room: Room = {roomname: roomname, user_ids:[]};
             rooms.push(room);
             room.user_ids.push(socket.id);
         }
@@ -83,18 +81,18 @@ io.on("connection", (socket: socketio.Socket) => {
         users.push(user);
         
         
-        socket.join(room_name);
+        socket.join(roomname);
 
         // Roomに参加通知
-        io.to(room_name).emit("join", data);
+        io.to(roomname).emit("join", data);
 
         // RoomのUserリスト取得
-        const room_users = get_room_users(room_name);
+        const room_users = get_room_users(roomname);
         console.log("users=", users);
         console.log("room_users=", room_users);
 
         // RoomUserリスト送信
-        io.to(room_name).emit("update_users", room_users);
+        io.to(roomname).emit("update_users", room_users);
     });
 
     // メッセージ送信受付時
@@ -104,10 +102,9 @@ io.on("connection", (socket: socketio.Socket) => {
         const user = get_user(socket.id);
 
         if(user) {
-            const user_name = user.user_name;
-            const icon = user.icon;
+            const user_name = user.username;
             const room_name = get_joined_room_name(socket.id);
-            if (room_name) io.to(room_name).emit("send", {user_name,icon,message});
+            if (room_name) io.to(room_name).emit("send", {user_name,message});
         }
     });
 
@@ -156,7 +153,7 @@ server.listen(PORT, () => {
 
 function get_room(room_name: string) {
     for (const room of rooms) {
-        if (room.room_name == room_name) return room;
+        if (room.roomname == room_name) return room;
     }
     return false;
 }
@@ -178,15 +175,15 @@ function get_room_users(room_name: string) {
 
 function get_room_user_ids(room_name: string) {
     for (const room of rooms) {
-        if (room.room_name == room_name) return room.user_ids;
+        if (room.roomname == room_name) return room.user_ids;
     }
     return false;
 }
 
 function get_joined_room_name(user_id: string) {
     for (const room of rooms) {
-        const room_user_ids = get_room_user_ids(room.room_name);
-        if (room_user_ids && room_user_ids.includes(user_id)) return room.room_name;
+        const room_user_ids = get_room_user_ids(room.roomname);
+        if (room_user_ids && room_user_ids.includes(user_id)) return room.roomname;
     }
     return false;
 }

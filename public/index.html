@@ -10,8 +10,11 @@
     <link type="text/css" rel="stylesheet" href="./css/card.css">
     <link type="text/css" rel="stylesheet" href="./css/board.css">
     <script type="text/javascript" src="./js/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="./board.js"></script>
     <script src="./room.js"></script>
+    <script src="./message.js"></script>
+    <script src="./client.js"></script>
 </head>
 <body>
 <header>
@@ -19,8 +22,9 @@
 </header>
 <main>
     <div class="container">
-        <hr>
-        <hr>
+        <div id="message_root">
+
+        </div>
         <hr>
         <div id="room_root">
 
