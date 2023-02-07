@@ -25,15 +25,8 @@ const zoom_overlay_id = "zoom_overlay";
 const zoom_img_id = "zoom_img";
 //
 window.addEventListener("load", () => {
-    // start_board();
-});
-window.addEventListener("keyup", function (e) {
-    if (e.key === 'a' || e.key === 'A') {
-        start_board();
-    }
-    else if (e.key === 's' || e.key === 'S') {
-        off_board();
-    }
+    start_board();
+    off_board();
 });
 function start_board() {
     // root要素
@@ -48,12 +41,13 @@ function start_board() {
     root.appendChild(document.createElement("hr"));
     create_input_file(root);
 }
+function on_board() {
+    const root = document.getElementById(board_root_id);
+    root.style.display = "block";
+}
 function off_board() {
     const root = document.getElementById(board_root_id);
-    while (root.firstChild) {
-        root.firstChild.remove();
-    }
-    ;
+    root.style.display = "none";
 }
 function create_board(root, type = 0) {
     // board要素

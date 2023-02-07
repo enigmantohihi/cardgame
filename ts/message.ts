@@ -9,6 +9,10 @@ const message_textbox_id = "message_textbox";
 const send_message_button_id = "send_message_button"
 //
 
+window.addEventListener("load",() => {
+    start_messages();
+    off_messages();
+});
 
 function start_messages() {
     // root要素
@@ -16,10 +20,13 @@ function start_messages() {
     while (root.firstChild) { root.firstChild.remove();};
     create_message_grid(root);
 }
-
-function off_message() {
-    const root = <Element>document.getElementById(message_root_id);
-    while (root.firstChild) { root.firstChild.remove();};
+function on_messages() {
+    const root = <HTMLElement>document.getElementById(message_root_id);
+    root.style.display = "block";
+}
+function off_messages() {
+    const root = <HTMLElement>document.getElementById(message_root_id);
+    root.style.display = "none";
 }
 
 function create_message_grid(root: Element) {
@@ -83,6 +90,7 @@ function create_send_form(root:Element) {
     root.appendChild(parent);
 }
 
+// メッセージリストに表示
 function set_message_list(text: string) {
     const message_list = <HTMLElement>document.getElementById(message_list_id);
 
@@ -90,13 +98,33 @@ function set_message_list(text: string) {
     message_list.appendChild(parent);
 
     const message = document.createElement("p");
-    message.textContent = text;
+    message.className = "mb-0";
+    message.textContent = `${text}`;
     parent.appendChild(message);
 
     const send_time = document.createElement("p");
+    send_time.className = "text-end mb-0";
     const now = new Date();
     send_time.textContent = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-    message.appendChild(send_time);
+    parent.appendChild(send_time);
 
     parent.appendChild(document.createElement("hr"));
+}
+
+// メッセージテキストボックスの内容の取得
+function get_message_textbox() {
+    const textbox = <HTMLInputElement>document.getElementById(message_textbox_id);
+    return textbox;
+}
+
+// 送信ボタンの取得
+function get_send_button() {
+    const button = <HTMLInputElement>document.getElementById(send_message_button_id);
+    return button;
+}
+
+// 文字が入力されていなかったり、空白のみだったりしたらtrueを返す
+function is_text_space(text: string) {
+    const result = (text==null || text=="" || text.match(/^[ 　\r\n\t]*$/))
+    return result;
 }

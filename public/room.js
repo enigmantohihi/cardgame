@@ -16,15 +16,8 @@ const rooms = [
     { room_name: "A", user_ids: ["1", "", ""] },
 ];
 window.addEventListener("load", () => {
-});
-window.addEventListener("keyup", function (e) {
-    if (e.key === 'q' || e.key === 'Q') {
-        start_room();
-        set_rooms(rooms);
-    }
-    else if (e.key === 'w' || e.key === 'W') {
-        off_room();
-    }
+    start_room();
+    off_room();
 });
 function start_room() {
     const root = document.getElementById("room_root");
@@ -34,12 +27,13 @@ function start_room() {
     ;
     create_grid(root);
 }
+function on_room() {
+    const root = document.getElementById("room_root");
+    root.style.display = "block";
+}
 function off_room() {
     const root = document.getElementById("room_root");
-    while (root.firstChild) {
-        root.firstChild.remove();
-    }
-    ;
+    root.style.display = "none";
 }
 function create_grid(root) {
     // 2列のGrid
@@ -127,7 +121,7 @@ function set_room(room, parent) {
     const col_left = document.createElement("div");
     col_left.classList.add("col-6");
     const title = document.createElement("h4");
-    title.textContent = room.room_name;
+    title.textContent = room.roomname;
     const room_count_text = document.createElement("p");
     room_count_text.textContent = `人数:${room.user_ids.length}人`;
     col_left.appendChild(title);
