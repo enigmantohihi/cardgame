@@ -138,6 +138,9 @@ function set_room(room, parent) {
     join_button.classList.add(join_room_button_class);
     join_button.name = room.roomname;
     join_button.textContent = "参加";
+    join_button.onclick = function () {
+        join_room(room.roomname);
+    };
     col_right.appendChild(join_button);
     row.appendChild(col_right);
     parent.appendChild(row);
