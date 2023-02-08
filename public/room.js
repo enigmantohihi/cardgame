@@ -5,6 +5,7 @@ const username_textbox_id = "username_textbox";
 const roomname_textbox_id = "roomname_textbox";
 const create_room_button_id = "create_room_button";
 const rooms_overflow_id = "rooms_overflow";
+const join_room_button_class = "join_room_button";
 //
 const rooms = [
     { room_name: "A", user_ids: ["1", "", ""] },
@@ -134,7 +135,8 @@ function set_room(room, parent) {
     const join_button = document.createElement("button");
     join_button.type = "button";
     join_button.className = "btn btn-primary w-100";
-    join_button.id = "";
+    join_button.classList.add(join_room_button_class);
+    join_button.name = room.roomname;
     join_button.textContent = "参加";
     col_right.appendChild(join_button);
     row.appendChild(col_right);

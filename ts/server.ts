@@ -62,10 +62,7 @@ io.on("connection", (socket: socketio.Socket) => {
 
         // 部屋があるか検索
         const room = get_room(roomname);
-        if (room) {
-            // 既に部屋があるときの処理
-            room.user_ids.push(socket.id);
-        } else {
+        if (!room) {
             // まだ部屋がないときの処理
             const room: Room = {roomname: roomname, user_ids:[]};
             rooms.push(room);
@@ -74,23 +71,48 @@ io.on("connection", (socket: socketio.Socket) => {
         console.log(rooms);
         // ルーム一覧を渡す
         io.emit("update_rooms", rooms);
-
         // userリストに追加
         users.push(user);
-        
-        
+        // ルームに参加
         socket.join(roomname);
-
         // Roomに参加通知
         io.to(roomname).emit("join_room", data);
-
         // RoomのUserリスト取得
         const room_users = get_room_users(roomname);
         console.log("users=", users);
         console.log("room_users=", room_users);
-
         // RoomUserリスト送信
-        io.to(roomname).emit("update_users", room_users);
+        // io.to(roomname).emit("update_users", room_users);
+    });
+
+    socket.on("join_room", (data) => {
+        // Room名やユーザー名を取得
+        console.log("[join_room] ", data);
+        // ユーザー作成
+        const user: User = {
+            id: socket.id,
+            username: data.username,
+        }
+        const roomname = data.roomname;
+        // 部屋があるか検索
+        const room = get_room(roomname);
+        if (room) {
+            // 既に部屋があるときの処理
+            room.user_ids.push(socket.id);
+        }
+
+        // ルーム一覧を渡す
+        io.emit("update_rooms", rooms);
+        // userリストに追加
+        users.push(user);
+        // ルームに参加
+        socket.join(roomname);
+        // Roomに参加通知
+        io.to(roomname).emit("join_room", data);
+        // RoomのUserリスト取得
+        const room_users = get_room_users(roomname);
+        console.log("users=", users);
+        console.log("room_users=", room_users);
     });
 
     // メッセージ受付時
@@ -119,8 +141,8 @@ io.on("connection", (socket: socketio.Socket) => {
                     room.user_ids = room.user_ids.filter(id => id!=socket.id );
                 }
                 // 部屋のユーザー更新
-                const users = get_room_users(roomname)
-                io.emit("update_users", users);
+                // const users = get_room_users(roomname)
+                // io.emit("update_users", users);
             }
         }
         

@@ -1,26 +1,14 @@
 let socket_id;
 let socket;
+
 window.addEventListener("load", () => {
     socket = io();
     on_room();
     const create_button = document.getElementById(create_room_button_id);
     create_button.onclick = create_room;
 
-    function create_room() {
-        let username = get_username();
-        let roomname = get_roomname();
-        if (is_text_space(username)) {
-            username = "名無し";
-            set_username(username);
-        }
-        if (is_text_space(roomname)) {
-            alert("部屋名を入力してください");
-            return;
-        }
-        socket.emit("create_room", { username,roomname });
-    }
     // ルームにjoinしたとき呼ぶ
-    function joined_room(){
+    function joined_room() {
         // 表示ページ切り替え
         off_room();
         on_messages();
@@ -39,23 +27,7 @@ window.addEventListener("load", () => {
         socket.disconnect();
         disconnected();
     }
-    
-    function set_message(text) {
-        const message_list = document.getElementById("message_list");
-        const parent = document.createElement("div");
-        parent.className = "row list-group-item mb-1";
-    
-        const li = document.createElement("li");
-        li.textContent = `${text}`;
-        parent.appendChild(li);
-        message_list.appendChild(parent);
-    }
-    
-    function send() {
-        const message = message_text_box.value;
-        socket.emit("send", message);
-    }
-    
+
     //　ルームから退出したとき呼ぶ
     function disconnected(){
         location.reload();
@@ -72,6 +44,7 @@ window.addEventListener("load", () => {
         socket.on("update_rooms", (rooms) => {
             console.log("update_rooms");
             set_rooms(rooms);
+            set_join_button();
         });
         socket.on("join_room", function(data){
             console.log("join: " + data.username);
@@ -88,3 +61,38 @@ window.addEventListener("load", () => {
         });
     }      
 });
+
+// 部屋作成
+function create_room() {
+    let username = get_username();
+    let roomname = get_roomname();
+    if (is_text_space(username)) {
+        username = "名無し";
+        set_username(username);
+    }
+    if (is_text_space(roomname)) {
+        alert("部屋名を入力してください");
+        return;
+    }
+    socket.emit("create_room", { username,roomname });
+}
+// 部屋に参加
+function join_room(roomname) {
+    let username = get_username();
+    if (is_text_space(username)) {
+        username = "名無し";
+        set_username(username);
+    }
+    socket.emit("create_room", { username,roomname });
+}
+
+// ルーム参加ボタンに処理を割り当てる
+function set_join_button() {
+    const join_buttons = document.getElementsByClassName(join_room_button_class);
+    for (join_button of join_buttons) {
+        const roomname = join_button.name;
+        join_button.onclick = function() {
+            join_room(roomname);
+        }
+    }
+};

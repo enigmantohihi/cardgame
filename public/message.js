@@ -80,17 +80,20 @@ function create_send_form(root) {
 function set_message_list(text) {
     const message_list = document.getElementById(message_list_id);
     const parent = document.createElement("div");
+    parent.className = "mx-2";
     message_list.appendChild(parent);
     const message = document.createElement("p");
-    message.className = "mb-0";
+    message.className = "my-0";
     message.textContent = `${text}`;
     parent.appendChild(message);
     const send_time = document.createElement("p");
-    send_time.className = "text-end mb-0";
+    send_time.className = "text-end my-0";
     const now = new Date();
     send_time.textContent = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
     parent.appendChild(send_time);
-    parent.appendChild(document.createElement("hr"));
+    const hr = document.createElement("hr");
+    hr.className = "my-0";
+    parent.appendChild(hr);
 }
 // メッセージテキストボックスの内容の取得
 function get_message_textbox() {
