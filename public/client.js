@@ -83,7 +83,7 @@ function join_room(roomname) {
         username = "名無し";
         set_username(username);
     }
-    socket.emit("create_room", { username,roomname });
+    socket.emit("join_room", { username,roomname });
 }
 
 // ルーム参加ボタンに処理を割り当てる

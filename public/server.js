@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
     // Room接続時
     socket.on("create_room", (data) => {
         // Room名やユーザー名を取得
-        console.log("[create_room] ", data);
+        console.log("[create room] ", data);
         // ユーザー作成
         const user = {
             id: socket.id,
@@ -71,7 +71,7 @@ io.on("connection", (socket) => {
     });
     socket.on("join_room", (data) => {
         // Room名やユーザー名を取得
-        console.log("[join_room] ", data);
+        console.log("[join room] ", data);
         // ユーザー作成
         const user = {
             id: socket.id,
