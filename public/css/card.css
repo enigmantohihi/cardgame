@@ -25,10 +25,6 @@
     /* width や height はjsでいじる */
 }
 
-.deck {
-    position: absolute;
-}
-
 .modal {
     padding: 16px;
     overflow-x: scroll;

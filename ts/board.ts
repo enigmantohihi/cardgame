@@ -13,6 +13,9 @@ const DECK_POS: Position = { x:480, y:20 };
 // 生成する要素のid名
 const board_root_id = "board_root";
 
+const card_place_id = "card_place";
+
+const deck_id = "deck";
 const deck_count_text_id = "deck_count_text";
 
 const deck_index_input_id = "draw_index_input";
@@ -75,6 +78,14 @@ function create_board(root:Element, type:number=0) {
     board.appendChild(screen);
     console.log("screen pos=", get_element_pos(screen));
 
+    //カード設置場所
+    const card_place = document.createElement("div");
+    card_place.classList.add("card_place");
+    card_place.classList.add("w-100");
+    card_place.classList.add("h-100");
+    card_place.id = `${card_place_id}${type}`;
+    screen.appendChild(card_place);
+
     // UI要素
     const ui_root = document.createElement("div");
     ui_root.classList.add("ui_root");
@@ -90,7 +101,7 @@ function create_board(root:Element, type:number=0) {
     }
     // デッキ要素
     const deck = document.createElement("div");
-    deck.id = `deck${type}`;
+    deck.id = `${deck_id}${type}`;
     deck.classList.add("deck");
     add_border(deck);
     const deck_pos = (type==1)?DECK_POS:reverse_pos(SCREEN_SIZE,DECK_SIZE,DECK_POS);

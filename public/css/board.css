@@ -12,6 +12,14 @@ header {
     position: absolute;
 }
 
+.card_place {
+    position: absolute;
+}
+
+.deck {
+    position: absolute;
+}
+
 .ui_root {
     position: absolute;
 }
