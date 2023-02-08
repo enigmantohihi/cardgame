@@ -35,5 +35,5 @@ class Card {
 // 自分のカードしか触れないようにする
 
 window.addEventListener("load",() => {
-    unko();
+    
 });

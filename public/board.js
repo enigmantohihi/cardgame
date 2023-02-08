@@ -9,7 +9,6 @@ const DECK_SIZE = { width: 90, height: 125.72 };
 const DECK_POS = { x: 480, y: 20 };
 // 生成する要素のid名
 const board_root_id = "board_root";
-const input_file_id = "input_file";
 const deck_count_text_id = "deck_count_text";
 const deck_index_input_id = "draw_index_input";
 const draw_radio_id = "draw_radio";
@@ -39,7 +38,6 @@ function start_board() {
     root.appendChild(document.createElement("hr"));
     create_board(root, 1);
     root.appendChild(document.createElement("hr"));
-    create_input_file(root);
 }
 function on_board() {
     const root = document.getElementById(board_root_id);
@@ -100,14 +98,6 @@ function create_board(root, type = 0) {
     deck.appendChild(deck_parent);
     screen.appendChild(deck);
     console.log("deck pos=", get_element_pos(deck));
-}
-function create_input_file(parent) {
-    // デッキファイル入力
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.id = input_file_id;
-    parent.appendChild(input);
 }
 function create_ui(ui_root) {
     const parent = document.createElement("div");

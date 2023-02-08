@@ -17,6 +17,7 @@ window.addEventListener("load", () => {
         off_room();
         on_messages();
         on_board();
+        on_input_file();
         const send_button = document.getElementById(send_message_button_id);
         send_button.onclick = function () {
             const message = get_message_textbox().value;

@@ -19,5 +19,4 @@ class Card {
 // server.js上のカード情報を変更して進める
 // 自分のカードしか触れないようにする
 window.addEventListener("load", () => {
-    unko();
 });
