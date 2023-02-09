@@ -66,14 +66,6 @@ function create_board(root, type = 0) {
     set_element_pos(screen, screen_pos);
     set_element_size(screen, SCREEN_SIZE);
     board.appendChild(screen);
-    console.log("screen pos=", get_element_pos(screen));
-    //カード設置場所
-    const card_place = document.createElement("div");
-    card_place.classList.add("card_place");
-    card_place.classList.add("w-100");
-    card_place.classList.add("h-100");
-    card_place.id = (type == 0) ? othercard_place_id : mycard_place_id; //`${card_place_id}${type}`;
-    screen.appendChild(card_place);
     // UI要素
     const ui_root = document.createElement("div");
     ui_root.classList.add("ui_root");
@@ -107,7 +99,13 @@ function create_board(root, type = 0) {
     deck_parent.appendChild(count_text);
     deck.appendChild(deck_parent);
     screen.appendChild(deck);
-    console.log("deck pos=", get_element_pos(deck));
+    //カード設置場所
+    const card_place = document.createElement("div");
+    card_place.classList.add("card_place");
+    card_place.classList.add("w-100");
+    card_place.classList.add("h-100");
+    card_place.id = (type == 0) ? othercard_place_id : mycard_place_id; //`${card_place_id}${type}`;
+    screen.appendChild(card_place);
 }
 function create_ui(ui_root) {
     const parent = document.createElement("div");
@@ -213,6 +211,14 @@ function create_overlay(parent) {
     img.className = "zoom_img";
     overlay.appendChild(img);
     parent.appendChild(overlay);
+}
+function zoom_card(img_path) {
+    const overlay = document.getElementById(zoom_overlay_id);
+    overlay.style.top = `${window.pageYOffset}px`;
+    overlay.style.display = "block";
+    overlay.onclick = function () { overlay.style.display = "none"; };
+    const img = document.getElementById(zoom_img_id);
+    img.src = img_path;
 }
 function add_border(element) {
     element.classList.add("bg-light");

@@ -43,7 +43,6 @@ class Card {
     move(x:number, y:number, center:number=1): boolean {
         this.param.pos.x = x - (this.param.parent_size.width/2 * center);
         this.param.pos.y = y - (this.param.parent_size.height/2 * center);
-        // const card_place_pos = get_cardplace_pos(1);
         const start_pos:Position = {x:0,y:0};
         const limit_pos:Position = {x:SCREEN_SIZE.width,y:SCREEN_SIZE.height};
         // 画面外に行かないようにする
@@ -115,6 +114,12 @@ class Card {
     }
 }
 
+let mouse_pos:Position = {x:0,y:0};
+const keys = {
+    A: false,
+}
+let selected_card: Card | null; // 選択したカード
+let selecting_card: Card | null; // 選択中のカード
 const my_cards:Cards = {decks:[], hands:[]};
 const other_cards:Cards = {decks:[], hands:[]};
 
@@ -123,9 +128,76 @@ const other_cards:Cards = {decks:[], hands:[]};
 
 window.addEventListener("load",() => {
     const my_card_place = <HTMLElement>document.getElementById(mycard_place_id);
-    my_card_place.addEventListener("mousemove", (e) => {
-        const x = e.offsetX;
-        const y = e.offsetY;
-    });
+    my_card_place.addEventListener("mousedown", mouse_down);
+    my_card_place.addEventListener("mousemove", mouse_move);
+    my_card_place.addEventListener("mouseup", mouse_up);
+    document.addEventListener("keypress", key_press);
+    document.addEventListener("keyup", key_up);
     
 });
+
+function mouse_down(e:any) {
+    const x = e.pageX;
+    const y = e.pageY;
+    const offset_pos = offsetPos(x,y);
+    mouse_pos = offset_pos;
+
+    // リストを逆から探索
+    for (let i=my_cards.hands.length-1;i>=0;i--) {
+        const card = my_cards.hands[i];
+        if (card.is_overlap(offset_pos.x, offset_pos.y)) {
+            console.log("this is card")
+            if (keys.A) card.change_mode();
+            selecting_card = card;
+            selected_card = card;
+            break;
+        }
+        selecting_card = null;
+    }
+}
+function mouse_move(e:any) {
+    const x = e.pageX;
+    const y = e.pageY;
+    const offset_pos = offsetPos(x,y);
+    if (selecting_card) {
+        selecting_card.move(offset_pos.x , offset_pos.y, 1);
+    }
+}
+function mouse_up(e:any) {
+    const x = e.pageX;
+    const y = e.pageY;
+    const offset_pos = offsetPos(x,y);
+    if (mouse_pos.x == offset_pos.x && mouse_pos.y == offset_pos.y && !keys.A) {
+        if (selecting_card) {
+            selecting_card.rotate();
+        }
+    }
+    selecting_card = null;
+}
+function key_press(e: any) {
+    if(e.key === 'a' || e.key === 'A'){
+        keys.A = true;
+    } else if(e.key === 'z' || e.key === 'Z'){
+        if(selected_card)zoom_card(selected_card.display(selected_card.param.mode));
+    }
+}
+function key_up(e: any) {
+    if(e.key === 'a' || e.key === 'A'){
+        keys.A = false;
+    } else if(e.key === 'z' || e.key === 'Z'){
+        const overlay = <HTMLElement>document.getElementById(zoom_overlay_id);
+        if(overlay.style.display == "block") overlay.style.display = "none";
+    }
+}
+
+// 自分のカード置き場要素の中のマウスの相対的な座標を求める
+//(card_place要素の左上角が{x:0,y:0}となるようにする)
+function offsetPos(x:number, y:number) {
+    const card_place = <HTMLElement>document.getElementById(mycard_place_id);
+    const card_place_pos = get_element_pos(card_place);
+    const result:Position = {
+        x: x - card_place_pos.x,
+        y: y - card_place_pos.y
+    }
+    return result;
+}

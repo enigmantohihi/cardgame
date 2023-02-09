@@ -57,23 +57,22 @@ reader.onload = function(e) {
     const obj = JSON.parse(data);
     console.log("obj = ", obj);
 
-    const cards:Cards = {decks:[], hands:[]};
     for (const key of Object.keys(obj)) {
         if (key == "back_img_path") {
             back_img_path = obj.back_img_path;
         } else if (key == "main") {
-            cards.decks = set_cards(obj.main.cards);
+            my_cards.decks = set_cards(obj.main.cards);
         } else if (key == "other") {
-            cards.hands = set_cards(obj.other.cards, 1);
+            my_cards.hands = set_cards(obj.other.cards, 1);
         }
     }
  
     const player_number = (socket_id=="")?get_player_number(socket_id):0;
-    const send_data = {player:player_number, cards:cards};
+    const send_data = {player:player_number, cards:my_cards};
     if (socket) socket.emit("set_cards", send_data);
 
     let count = 0;
-    for (const card of cards.hands) {
+    for (const card of my_cards.hands) {
         const x = 45 * ((count%2==0)?0:1) + SCREEN_POS.x;
         const y = Math.floor(count/2) * 63 + SCREEN_POS.y;
         card.move(x,y,1);
