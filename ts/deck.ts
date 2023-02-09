@@ -4,6 +4,7 @@ const input_file_id = "input_file";
 //
 
 //
+
 let id = 0;
 let back_img_path = "https://pics.prcm.jp/0be3ee414924e/71891496/jpeg/71891496.jpeg";
 //
@@ -55,34 +56,62 @@ reader.onload = function(e) {
     const data = (e.target as any).result;
     const obj = JSON.parse(data);
     console.log("obj = ", obj);
-    init_state();
+
+    const cards:Cards = {decks:[], hands:[]};
     for (const key of Object.keys(obj)) {
         if (key == "back_img_path") {
             back_img_path = obj.back_img_path;
         } else if (key == "main") {
-            set_cards(obj.main.cards);
+            cards.decks = set_cards(obj.main.cards);
         } else if (key == "other") {
-            set_cards(obj.other.cards, 1);
+            cards.hands = set_cards(obj.other.cards, 1);
         }
+    }
+ 
+    const player_number = (socket_id=="")?get_player_number(socket_id):0;
+    const send_data = {player:player_number, cards:cards};
+    if (socket) socket.emit("set_cards", send_data);
+
+    let count = 0;
+    for (const card of cards.hands) {
+        const x = 45 * ((count%2==0)?0:1) + SCREEN_POS.x;
+        const y = Math.floor(count/2) * 63 + SCREEN_POS.y;
+        card.move(x,y,1);
+        set_card_element(card);
+        count++;
     }
 }
 
-// 初期化
-function init_state() {
-    cards = [];
-}
 
-
-function set_cards(data:any, type:number=0) {
-    for (const carddata of data) {      
+function set_cards(obj:any, type:number=0) {
+    const cards:Card[] = [];
+    for (const carddata of obj) {      
         for (let i=0;i<carddata.count;i++) {
-            const img_path = create_img_path_list(carddata)
-            const card = new Card(id, "", img_path);
+            const img_path_list = create_img_path_list(carddata);
+            const cardPram:CardPram = set_cardParam(id, player_number, img_path_list)
+            const card = new Card(cardPram);
 
-            cards.push(card);
+            if (type==0) cards.push(card);
+            else cards.push(card);
             id++;
         }
     }
+    return cards;
+}
+
+function set_cardParam(id:number, player_number:PLAYER_NUMBER, img_path_list:string[]) {
+    const cardParam:CardPram = {
+        id: id,
+        owner: player_number, // カード所有者ID
+        visible: false, //trueのとき表示
+        pos: {x:0,y:0},
+        parent_size: {width:0,height:0},
+        img_size: {width:0,height:0},
+        angle: 0,
+        mode: 0, // どのimgを表示するかのindex
+        img_path_list: img_path_list
+    }
+    return cardParam;
 }
 
 function create_img_path_list(carddata:any) {

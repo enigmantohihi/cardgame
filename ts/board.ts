@@ -13,7 +13,8 @@ const DECK_POS: Position = { x:480, y:20 };
 // 生成する要素のid名
 const board_root_id = "board_root";
 
-const card_place_id = "card_place";
+const mycard_place_id = "my_card_place";
+const othercard_place_id = "other_card_place";
 
 const deck_id = "deck";
 const deck_count_text_id = "deck_count_text";
@@ -83,7 +84,7 @@ function create_board(root:Element, type:number=0) {
     card_place.classList.add("card_place");
     card_place.classList.add("w-100");
     card_place.classList.add("h-100");
-    card_place.id = `${card_place_id}${type}`;
+    card_place.id = (type==0)? othercard_place_id: mycard_place_id; //`${card_place_id}${type}`;
     screen.appendChild(card_place);
 
     // UI要素
@@ -259,6 +260,45 @@ function set_element_size(element:HTMLElement, size:Size) {
     element.style.height = `${size.height}px`;
 }
 
+// オリジナルの画像の幅と高さを取得
+function get_img_size(element: any) {
+    const width = element.naturalWidth;
+    const height = element.naturalHeight;
+    const size = {width: width, height: height};
+    return size;
+};
+const aspects:Size[] = [
+    {width:90, height:125.72}, // 0.725
+    {width:125.72, height:90}, // 1.37
+    {width:125.72, height:270} // 0.45
+]
+// オリジナル画像の幅,高さの比率から一番近い比率の幅,高さを返す
+function get_element_size(width: number, height: number) {
+    let near_diff = 0;
+    let result = aspects[0];
+    const rate = width / height;
+
+    let i=0;
+    for (const aspect of aspects) {
+        const diff = Math.abs((rate) - (aspect.width/aspect.height));
+        if (i==0) {
+            near_diff = diff;
+            result = aspect;
+        }
+        if (diff < near_diff) {
+            near_diff = diff;
+            result = aspect;
+        }
+        i++;
+    }
+    return result;
+}
+function get_aspect(element: HTMLElement) {
+    const img_size: any = get_img_size(element);
+    const element_size = get_element_size(img_size.width, img_size.height);
+    return element_size;
+}
+
 // 親要素内での位置の逆転
 function reverse_pos(parent_size:Size, this_size:Size, this_pos:Position, reverse_x:boolean=true, reverse_y:boolean=true):Position {
     const x = (reverse_x)?(parent_size.width-this_size.width)-this_pos.x : this_pos.x;
@@ -270,4 +310,29 @@ function get_deck_pos(id:number) {
     const deck = <HTMLElement>document.getElementById(`deck${id}`);
     console.log("deck pos=", get_element_pos(deck));
     return get_element_pos(deck);
+}
+
+// Cardクラスをもとにhtml上に表示
+function set_card_element(card: Card) {
+    const element = document.createElement("div");
+    const element_img = document.createElement("img")
+    const elements: CardElement = { parent: element, img: element_img };
+    element.appendChild(element_img);
+
+    const number = (card.param.owner==socket_id)?1:1;
+    const card_place = <HTMLElement>document.getElementById((number==1)?mycard_place_id:mycard_place_id);
+    card_place.appendChild(element);
+
+    element.id = "card"+String(card.param.id);
+    element.classList.add("card");
+    add_border(element);
+    set_element_size(element, {width:card.param.parent_size.width, height:card.param.parent_size.height });
+    element.style.left = `${card.param.pos.x}px`;
+    element.style.top = `${card.param.pos.y}px`;
+
+    element_img.className = "card_img"
+    element_img.src = card.display(card.param.mode);
+    card.elements = elements;
+    card.update_card_element();
+    return elements;
 }

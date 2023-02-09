@@ -15,17 +15,6 @@ app.use(express_1.default.static("public"));
 app.get("/", (req, res) => {
     // res.sendFile(__dirname + "/index.html");
 });
-/*
-Rooms 1---* Room
-Room 1---* socket.id
-
-Users 1---* User
-User 1---1 socket.id
-
-RoomのusersにはそのRoomに入っているユーザーのsocket.idだけを格納
-Users配列には接続中のユーザーをRoom関係なく格納
-socket.idをUserの主キーとしてRoomと繋ぐ
-*/
 let rooms = [];
 let users = [];
 io.on("connection", (socket) => {
@@ -49,23 +38,28 @@ io.on("connection", (socket) => {
         const room = get_room(roomname);
         if (!room) {
             // まだ部屋がないときの処理
-            const room = { roomname: roomname, user_ids: [] };
+            const room = { roomname: roomname, user_ids: [], player_ids: ["", ""], other_ids: [] };
             rooms.push(room);
             room.user_ids.push(socket.id);
+            room.player_ids[0] = socket.id;
+            // ルームに参加
+            socket.join(roomname);
+            // Roomに参加通知
+            io.to(roomname).emit("join_room", data);
+            //Room内のUserIDリスト送信
+            io.to(roomname).emit("update_users", room.user_ids);
+            console.log("user ids=", room.user_ids);
+            // プレイしているユーザーリスト送信
+            io.to(roomname).emit("update_plyaer_ids", room.player_ids);
+            console.log("player ids=", room.player_ids);
         }
         console.log(rooms);
         // ルーム一覧を渡す
         io.emit("update_rooms", rooms);
         // userリストに追加
         users.push(user);
-        // ルームに参加
-        socket.join(roomname);
-        // Roomに参加通知
-        io.to(roomname).emit("join_room", data);
         // RoomのUserリスト取得
-        const room_users = get_room_users(roomname);
-        console.log("users=", users);
-        console.log("room_users=", room_users);
+        // const room_users = get_room_users(roomname);
         // RoomUserリスト送信
         // io.to(roomname).emit("update_users", room_users);
     });
@@ -83,6 +77,12 @@ io.on("connection", (socket) => {
         if (room) {
             // 既に部屋があるときの処理
             room.user_ids.push(socket.id);
+            if (room.player_ids[0] == "")
+                room.player_ids[0] = socket.id;
+            else if (room.player_ids[1] == "")
+                room.player_ids[1] = socket.id;
+            else
+                room.other_ids.push(socket.id);
         }
         // ルーム一覧を渡す
         io.emit("update_rooms", rooms);
@@ -92,6 +92,14 @@ io.on("connection", (socket) => {
         socket.join(roomname);
         // Roomに参加通知
         io.to(roomname).emit("join_room", data);
+        //RoomないのUserIDリスト送信
+        if (room) {
+            io.to(roomname).emit("update_users", room.user_ids);
+            console.log("user ids=", room.user_ids);
+            // プレイしているユーザーリスト送信
+            io.to(roomname).emit("update_plyaer_ids", room.player_ids);
+            console.log("player ids=", room.player_ids);
+        }
         // RoomのUserリスト取得
         const room_users = get_room_users(roomname);
         console.log("users=", users);
@@ -115,10 +123,23 @@ io.on("connection", (socket) => {
             const roomname = get_joined_room_name(socket.id);
             if (roomname) {
                 io.to(roomname).emit("leave", user);
-                // 切断したuserのidだけを省いてusersを更新
                 const room = get_room(roomname);
                 if (room) {
+                    // 切断したuserのidだけを省いてusersを更新
                     room.user_ids = room.user_ids.filter(id => id != socket.id);
+                    io.to(roomname).emit("update_users", room.user_ids);
+                    console.log("user ids=", room.user_ids);
+                    // 切断したユーザーのidをプレイしているユーザーリストまたは観戦者リストから削除
+                    if (room.player_ids[0] == socket.id)
+                        room.player_ids[0] = "";
+                    else if (room.player_ids[1] == socket.id)
+                        room.player_ids[1] = "";
+                    else
+                        room.other_ids = room.other_ids.filter(id => id != socket.id);
+                    // プレイしているユーザーリスト送信
+                    io.to(roomname).emit("update_plyaer_ids", room.player_ids);
+                    console.log("player ids=", room.player_ids);
+                    console.log("other ids=", room.other_ids);
                 }
                 // 部屋のユーザー更新
                 // const users = get_room_users(roomname)
@@ -132,6 +153,16 @@ io.on("connection", (socket) => {
         // ルーム一覧を渡す
         io.emit("update_rooms", rooms);
         // io.emit("update_users", users);
+    });
+    // デッキ受信
+    socket.on("set_cards", (data) => {
+        console.log("[set cards]", data);
+        const roomname = get_joined_room_name(socket.id);
+        if (roomname) {
+            const room = get_room(roomname);
+            if (room) {
+            }
+        }
     });
 });
 const PORT = process.env.PORT || (0, config_1.default)();
@@ -147,7 +178,6 @@ function get_room(room_name) {
 }
 function get_room_users(room_name) {
     const user_ids = get_room_user_ids(room_name);
-    console.log("user_ids=", user_ids);
     if (user_ids) {
         const result = [];
         for (const user of users) {

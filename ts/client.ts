@@ -1,9 +1,13 @@
-let socket_id;
+type PLAYER_NUMBER = "1P" | "2P" | "Audience";
+let player_number:PLAYER_NUMBER; // 自分が1P,2Pどちらかを保持
+let socket_id:string;
 let socket:any;
+let userid_list:string[] = [];
 
 window.addEventListener("load", () => {
     // @ts-ignore
     socket = io();
+
     start();
     // 最初ページにアクセスした時に呼ぶ
     function start() {
@@ -43,8 +47,10 @@ window.addEventListener("load", () => {
             console.log("id=", $socket_id)
             socket_id = $socket_id;
         });
-        socket.on("update_users", (users:any[]) => {
+        socket.on("update_users", ($userid_list:string[]) => {
             // set_users(users);
+            userid_list = $userid_list;
+            console.log("userid_list=", userid_list);
         });
         socket.on("update_rooms", (rooms:any[]) => {
             console.log("update_rooms");
@@ -62,6 +68,21 @@ window.addEventListener("load", () => {
         socket.on("receive_message", function(data:any){
             console.log("receive_message: " + data.message);
             set_message_list(`${data.username}:${data.message}`);
+        });
+
+        // card用
+        socket.on("update_plyaer_ids", (player_ids:string[]) => {
+            player_number = 
+                (player_ids[0]==socket_id)?"1P":
+                (player_ids[1]==socket_id)?"2P":
+                "Audience";
+            console.log("Player Number:",player_number);
+        });
+
+        socket.on("receive_card", (card:Card) => {
+            console.log("receive card");
+            console.log("card type:", typeof(card));
+            console.log("card:", card);
         });
     }      
 });
@@ -90,6 +111,14 @@ function join_room(roomname:string) {
     socket.emit("join_room", { username,roomname });
 }
 
-function unko() {
-    console.log("unko");
+// 自分が何Pか取得
+function get_player_number(socket_id: string) {
+    let count = 0;
+    for (const id of userid_list) {
+        if (socket_id==id) {
+            break;
+        }
+        count++;
+    }
+    return count;
 }

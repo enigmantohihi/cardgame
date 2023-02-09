@@ -4,6 +4,17 @@ import socketio from "socket.io";
 import path from "path";
 import get_port from "./config";
 
+interface User {
+    id: string,
+    username: string,
+}
+interface Room  {
+    roomname: string
+    user_ids: string[] // ルームに参加しているplayerのidリスト
+    player_ids: string[] // ゲームをプレイしているユーザー(配列の長さは2で固定)
+    other_ids: string[] // プレイしている人以外ここに入れる
+}
+
 const app = express();
 const server = http.createServer(app);
 const io: socketio.Server = new socketio.Server(server);
@@ -14,27 +25,6 @@ app.use(express.static("public"));
 app.get("/", (req,res) => {
     // res.sendFile(__dirname + "/index.html");
 });
-
-interface User {
-    id: string,
-    username: string,
-}
-interface Room  {
-    roomname: string,
-    user_ids: string[]
-}
-
-/*
-Rooms 1---* Room
-Room 1---* socket.id
-
-Users 1---* User
-User 1---1 socket.id
-
-RoomのusersにはそのRoomに入っているユーザーのsocket.idだけを格納
-Users配列には接続中のユーザーをRoom関係なく格納
-socket.idをUserの主キーとしてRoomと繋ぐ
-*/
 
 let rooms: Room[] = [];
 let users: User[] = [];
@@ -59,28 +49,36 @@ io.on("connection", (socket: socketio.Socket) => {
             username: data.username,
         }
         const roomname = data.roomname;
-
         // 部屋があるか検索
         const room = get_room(roomname);
         if (!room) {
             // まだ部屋がないときの処理
-            const room: Room = {roomname: roomname, user_ids:[]};
+            const room: Room = {roomname: roomname, user_ids:[], player_ids:["",""], other_ids:[] };
             rooms.push(room);
             room.user_ids.push(socket.id);
+            room.player_ids[0] = socket.id;
+
+            // ルームに参加
+            socket.join(roomname);
+            // Roomに参加通知
+            io.to(roomname).emit("join_room", data);
+
+            //Room内のUserIDリスト送信
+            io.to(roomname).emit("update_users", room.user_ids);
+            console.log("user ids=", room.user_ids);
+
+            // プレイしているユーザーリスト送信
+            io.to(roomname).emit("update_plyaer_ids", room.player_ids);
+            console.log("player ids=", room.player_ids);
         }
         console.log(rooms);
         // ルーム一覧を渡す
         io.emit("update_rooms", rooms);
         // userリストに追加
         users.push(user);
-        // ルームに参加
-        socket.join(roomname);
-        // Roomに参加通知
-        io.to(roomname).emit("join_room", data);
+
         // RoomのUserリスト取得
-        const room_users = get_room_users(roomname);
-        console.log("users=", users);
-        console.log("room_users=", room_users);
+        // const room_users = get_room_users(roomname);
         // RoomUserリスト送信
         // io.to(roomname).emit("update_users", room_users);
     });
@@ -99,6 +97,9 @@ io.on("connection", (socket: socketio.Socket) => {
         if (room) {
             // 既に部屋があるときの処理
             room.user_ids.push(socket.id);
+            if (room.player_ids[0]=="") room.player_ids[0] = socket.id;
+            else if (room.player_ids[1]=="") room.player_ids[1] = socket.id;
+            else room.other_ids.push(socket.id);
         }
 
         // ルーム一覧を渡す
@@ -109,6 +110,14 @@ io.on("connection", (socket: socketio.Socket) => {
         socket.join(roomname);
         // Roomに参加通知
         io.to(roomname).emit("join_room", data);
+        //RoomないのUserIDリスト送信
+        if (room) {
+            io.to(roomname).emit("update_users", room.user_ids);
+            console.log("user ids=", room.user_ids);
+            // プレイしているユーザーリスト送信
+            io.to(roomname).emit("update_plyaer_ids", room.player_ids);
+            console.log("player ids=", room.player_ids);
+        }
         // RoomのUserリスト取得
         const room_users = get_room_users(roomname);
         console.log("users=", users);
@@ -129,35 +138,51 @@ io.on("connection", (socket: socketio.Socket) => {
         console.log(`[disconnect]: ${socket.id}`);
         // IDからユーザー取得
         const user = get_user(socket.id);
-
         if (user) {
             const roomname = get_joined_room_name(socket.id);
             if (roomname) {
                 io.to(roomname).emit("leave", user);
-
-                // 切断したuserのidだけを省いてusersを更新
                 const room = get_room(roomname);
                 if (room) {
+                    // 切断したuserのidだけを省いてusersを更新
                     room.user_ids = room.user_ids.filter(id => id!=socket.id );
+                    io.to(roomname).emit("update_users", room.user_ids);
+                    console.log("user ids=", room.user_ids);
+
+                    // 切断したユーザーのidをプレイしているユーザーリストまたは観戦者リストから削除
+                    if (room.player_ids[0]==socket.id) room.player_ids[0]="";
+                    else if (room.player_ids[1]==socket.id) room.player_ids[1]="";
+                    else room.other_ids = room.other_ids.filter(id => id!=socket.id);
+                    // プレイしているユーザーリスト送信
+                    io.to(roomname).emit("update_plyaer_ids", room.player_ids);
+                    console.log("player ids=", room.player_ids);
+                    console.log("other ids=", room.other_ids);
                 }
                 // 部屋のユーザー更新
                 // const users = get_room_users(roomname)
                 // io.emit("update_users", users);
             }
         }
-        
         // Userリスト更新
-        users = users.filter(user => user.id != socket.id);
-        
+        users = users.filter(user => user.id != socket.id); 
         // 部屋のusersが0人のとこを省いて更新
         rooms = rooms.filter(room => room.user_ids.length != 0);
-
         // ルーム一覧を渡す
         io.emit("update_rooms", rooms);
-
         // io.emit("update_users", users);
     });
 
+    // デッキ受信
+    socket.on("set_cards", (data) => {
+        console.log("[set cards]", data);
+        const roomname = get_joined_room_name(socket.id);
+        if (roomname) {
+            const room = get_room(roomname);
+            if (room) {
+
+            }
+        }
+    });
 })
 const PORT= process.env.PORT || get_port();
 server.listen(PORT, () => {
@@ -173,7 +198,6 @@ function get_room(room_name: string) {
 
 function get_room_users(room_name: string) {
     const user_ids = get_room_user_ids(room_name);
-    console.log("user_ids=",user_ids);
     if (user_ids) {
         const result: User[] = [];
         for (const user of users) {
