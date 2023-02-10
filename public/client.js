@@ -73,31 +73,29 @@ window.addEventListener("load", () => {
         // Room入室時Roomのデッキ情報を取得して表示
         socket.on("sync_card_data", (data) => {
             console.log("sync data:", data);
-            if (my_number == "1P" || my_number == "Audience") {
-                my_cards.hands = create_cards(data.hands1P);
-                my_cards.decks = create_cards(data.decks1P);
-                other_cards.hands = create_cards(data.hands2P);
-                other_cards.decks = create_cards(data.decks2P);
-            }
-            else if (my_number == "2P") {
-                my_cards.hands = create_cards(data.hands2P);
-                my_cards.decks = create_cards(data.decks2P);
-                other_cards.hands = create_cards(data.hands1P);
-                other_cards.decks = create_cards(data.decks1P);
-            }
+            const player1 = "1P";
+            const player2 = "2P";
+            create_card_elements(player1, data.hands1P);
+            create_card_elements(player1, data.decks1P);
+            create_card_elements(player2, data.hands2P);
+            create_card_elements(player2, data.decks2P);
         });
         // 誰かがファイル入力からデッキ情報セットしたらサーバーを通ってここに来る
         socket.on("send_card_data", (data) => {
             console.log("send_card_data card");
             const player_number = data.player_number;
-            if (my_number == player_number) {
-                my_cards.hands = create_cards(data.hands);
-                my_cards.decks = create_cards(data.decks);
-            }
-            else {
-                other_cards.hands = create_cards(data.hands);
-                other_cards.decks = create_cards(data.decks);
-            }
+            create_card_elements(player_number, data.hands);
+            create_card_elements(player_number, data.decks);
+        });
+        // Cardのアクション同期受付
+        socket.on("update_hands", (data) => {
+            console.log("Updata Hands:", data);
+            const player_number = data.player_number;
+            const target_id = data.card.id;
+            const card = data.card;
+            const elements = find_card_element(player_number, target_id);
+            if (elements)
+                update_card_element(card, elements);
         });
     }
 });

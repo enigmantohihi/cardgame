@@ -52,23 +52,24 @@ function selected_file() {
 // ファイル読み込みのやつを読み込み
 const reader = new FileReader();
 // ファイル読み込み時の処理
-reader.onload = function(e) {
+reader.onload = async function(e) {
     const data = (e.target as any).result;
     const obj = JSON.parse(data);
     console.log("obj = ", obj);
 
-    let hands:CardPram[] = [];
-    let decks:CardPram[] = [];
-
+    let hands:Card[] = [];
+    let decks:Card[] = [];
     for (const key of Object.keys(obj)) {
         if (key == "back_img_path") {
             back_img_path = obj.back_img_path;
         } else if (key == "main") {
             // my_cards.decks = set_cards(obj.main.cards);
-            decks = set_cardPrams(my_number, obj.main.cards);
+            decks = await set_cardPrams(my_number, obj.main.cards);
+            console.log("deck:",decks);
         } else if (key == "other") {
             // my_cards.hands = set_cards(obj.other.cards, 1);
-            hands = set_cardPrams(my_number, obj.other.cards);
+            hands = await set_cardPrams(my_number, obj.other.cards);
+            console.log("hands:", hands);
         }
     }
     // handsのカードの位置調整
@@ -83,55 +84,39 @@ reader.onload = function(e) {
     const send_data = {player_number:my_number, hands:hands, decks:decks};
     // serverにデッキ情報を送る
     if (socket) socket.emit("read_cards", send_data);
-
-    // let count = 0;
-    // for (const card of my_cards.hands) {
-    //     const x = 45 * ((count%2==0)?0:1) + SCREEN_POS.x;
-    //     const y = Math.floor(count/2) * 63 + SCREEN_POS.y;
-    //     card.move(x,y,1);
-    //     set_card_element(card);
-    //     count++;
-    // }
 }
 
-function set_cardPrams(player_number:PLAYER_NUMBER, obj:any) {
-    const cardParams:CardPram[] = [];
+async function set_cardPrams(player_number:PLAYER_NUMBER, obj:any) {
+    const cards:Card[] = [];
     for (const carddata of obj) {      
         for (let i=0;i<carddata.count;i++) {
             const img_path_list = create_img_path_list(carddata);
-            const cardPram:CardPram = set_cardParam(id, player_number, img_path_list)
-            cardParams.push(cardPram);
+            const card = new Card(id, player_number, img_path_list)
+            for (const img_path of img_path_list) {
+                const img = await load_image(img_path);
+                if (img) {
+                    const size = get_aspect(img);
+                    card.img_size.push(size);
+                }
+            }
+            card.parent_size = card.img_size[card.mode];
+            cards.push(card);
             id++;
         }
-    }
-    return cardParams;
-}
-
-// サーバーから受けとたカードのパラメーター情報配列をもとにカードを生成
-function create_cards(params:CardPram[]) {
-    const cards:Card[] = [];
-    for (const param of params) {
-        const card = new Card(param);
-        cards.push(card);
-        set_card_element(card);
     }
     return cards;
 }
 
-function set_cardParam(id:number, player_number:PLAYER_NUMBER, img_path_list:string[]) {
-    const cardParam:CardPram = {
-        id: id,
-        owner: player_number, // カード所有者ID
-        visible: false, //trueのとき表示
-        pos: {x:0,y:0},
-        parent_size: {width:0,height:0},
-        img_size: {width:0,height:0},
-        angle: 0,
-        mode: 0, // どのimgを表示するかのindex
-        img_path_list: img_path_list
-    }
-    return cardParam;
-}
+// サーバーから受けとったカードのパラメーター情報配列をもとにカードを生成
+// function create_cards(params:Card[]) {
+//     const cards:Card[] = [];
+//     for (const param of params) {
+//         const card = new Card(param);
+//         cards.push(card);
+//         set_card_element(card);
+//     }
+//     return cards;
+// }
 
 function create_img_path_list(carddata:any) {
     const img_path_list = 
@@ -139,4 +124,17 @@ function create_img_path_list(carddata:any) {
         : typeof(carddata.img_path)=="object" && carddata.img_path.length==1 ? [carddata.img_path[0], back_img_path]
         : carddata.img_path;
     return img_path_list;
+}
+
+async function load_image(path:string){
+    let img = null;
+    const promise = new Promise(function(resolve:any){
+        img = new Image();
+        img.onload = function(){
+            resolve();
+        }
+        img.src = path;
+    });
+    await promise;
+    return img;
 }

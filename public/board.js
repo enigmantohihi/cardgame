@@ -256,7 +256,7 @@ const aspects = [
     { width: 125.72, height: 270 } // 0.45
 ];
 // オリジナル画像の幅,高さの比率から一番近い比率の幅,高さを返す
-function get_element_size(width, height) {
+function get_near_aspect(width, height) {
     let near_diff = 0;
     let result = aspects[0];
     const rate = width / height;
@@ -277,7 +277,7 @@ function get_element_size(width, height) {
 }
 function get_aspect(element) {
     const img_size = get_img_size(element);
-    const element_size = get_element_size(img_size.width, img_size.height);
+    const element_size = get_near_aspect(img_size.width, img_size.height);
     return element_size;
 }
 // 親要素内での位置の逆転
@@ -292,36 +292,47 @@ function get_deck_pos(id) {
     return get_element_pos(deck);
 }
 // Cardクラスをもとにhtml上に表示
-function set_card_element(card) {
-    const element = document.createElement("div");
-    const element_img = document.createElement("img");
-    const elements = { parent: element, img: element_img };
-    element.appendChild(element_img);
-    // if (my_number=="1P"||my_number=="Audience") {
-    //     // typeが1なら下, 0なら上側に設置
-    //     const type = (card.param.owner=="1P")?1:0;
-    //     const card_place = <HTMLElement>document.getElementById((type==1)?mycard_place_id:othercard_place_id);
-    //     card_place.appendChild(element);
-    // } else {
-    //     // typeが1なら下, 0なら上側に設置
-    //     const type = (card.param.owner=="2P")?1:0;
-    //     const card_place = <HTMLElement>document.getElementById((type==1)?mycard_place_id:othercard_place_id);
-    //     card_place.appendChild(element);
-    // }
-    const type = ((my_number == "1P" || my_number == "Audience") && card.param.owner == "1P") ? 1 :
-        (my_number == "2P" && card.param.owner == "2P") ? 1 : 0;
-    const card_place = document.getElementById((type == 1) ? mycard_place_id : othercard_place_id);
-    card_place.appendChild(element);
-    element.id = "card" + String(card.param.id);
-    element.classList.add("card");
-    add_border(element);
-    set_element_size(element, { width: card.param.parent_size.width, height: card.param.parent_size.height });
-    element.style.left = `${card.param.pos.x}px`;
-    element.style.top = `${card.param.pos.y}px`;
-    element_img.className = "card_img";
-    element_img.src = card.display(card.param.mode);
-    card.elements = elements;
-    card.update_card_element();
-    card.set_visible();
-    return elements;
+// function set_card_element(card: Card) {
+//     const element = document.createElement("div");
+//     const element_img = document.createElement("img")
+//     const elements: CardElement = { id:0, parent: element, img: element_img };
+//     element.appendChild(element_img);
+//     const type = 
+//         ((my_number=="1P"||my_number=="Audience")&&card.owner=="1P")?1:
+//         (my_number=="2P"&&card.owner=="2P")?1:0;
+//     const card_place = <HTMLElement>document.getElementById((type==1)?mycard_place_id:othercard_place_id);
+//     card_place.appendChild(element);
+//     element.id = "card"+String(card.id);
+//     element.classList.add("card");
+//     add_border(element);
+//     set_element_size(element, {width:card.parent_size.width, height:card.parent_size.height });
+//     element.style.left = `${card.pos.x}px`;
+//     element.style.top = `${card.pos.y}px`;
+//     element_img.className = "card_img"
+//     element_img.src = card.display(card.mode);
+//     card.update_card_element();
+//     card.set_visible();
+//     return elements;
+// }
+function set_element_visible(card, element) {
+    if (card.visible)
+        element.classList.remove("d-none");
+    else
+        element.classList.add("d-none");
+}
+// 角度やモードチェンジしたときの画像をもとにカードのサイズ計算,更新
+function set_element_mode(card, elements) {
+    const img_size = card.img_size[card.mode];
+    elements.img.style.transform = `rotate(${card.angle}deg)`;
+    if (card.angle == 90) {
+        set_element_size(elements.parent, { width: img_size.height, height: img_size.width });
+        const n = (img_size.width < img_size.height) ? 1 : -1;
+        const x = n * (Math.abs(img_size.width - img_size.height) / 2);
+        const y = n * (-Math.abs(img_size.width - img_size.height) / 2);
+        set_element_pos(elements.img, { x: x, y: y });
+    }
+    else {
+        set_element_size(elements.parent, img_size);
+        set_element_pos(elements.img, { x: 0, y: 0 });
+    }
 }
