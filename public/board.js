@@ -297,8 +297,20 @@ function set_card_element(card) {
     const element_img = document.createElement("img");
     const elements = { parent: element, img: element_img };
     element.appendChild(element_img);
-    const number = (card.param.owner == socket_id) ? 1 : 1;
-    const card_place = document.getElementById((number == 1) ? mycard_place_id : mycard_place_id);
+    // if (my_number=="1P"||my_number=="Audience") {
+    //     // typeが1なら下, 0なら上側に設置
+    //     const type = (card.param.owner=="1P")?1:0;
+    //     const card_place = <HTMLElement>document.getElementById((type==1)?mycard_place_id:othercard_place_id);
+    //     card_place.appendChild(element);
+    // } else {
+    //     // typeが1なら下, 0なら上側に設置
+    //     const type = (card.param.owner=="2P")?1:0;
+    //     const card_place = <HTMLElement>document.getElementById((type==1)?mycard_place_id:othercard_place_id);
+    //     card_place.appendChild(element);
+    // }
+    const type = ((my_number == "1P" || my_number == "Audience") && card.param.owner == "1P") ? 1 :
+        (my_number == "2P" && card.param.owner == "2P") ? 1 : 0;
+    const card_place = document.getElementById((type == 1) ? mycard_place_id : othercard_place_id);
     card_place.appendChild(element);
     element.id = "card" + String(card.param.id);
     element.classList.add("card");
@@ -310,5 +322,6 @@ function set_card_element(card) {
     element_img.src = card.display(card.param.mode);
     card.elements = elements;
     card.update_card_element();
+    card.set_visible();
     return elements;
 }

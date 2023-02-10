@@ -1,6 +1,7 @@
 "use strict";
 class Card {
     constructor(param) {
+        this.id = param.id;
         this.param = param;
         this.elements = null;
     }
@@ -95,9 +96,19 @@ class Card {
                 card.param.parent_size = { width: size.width, height: size.height };
                 set_element_size(element, { width: card.param.img_size.width, height: card.param.img_size.height });
             }
+            card.set_visible();
             card.adjust_pos();
             card.move(card.param.pos.x, card.param.pos.y, 0);
         };
+    }
+    set_visible() {
+        const card = this;
+        if (!card.elements)
+            return;
+        if (card.param.visible)
+            card.elements.parent.classList.remove("d-none");
+        else
+            card.elements.parent.classList.add("d-none");
     }
 }
 let mouse_pos = { x: 0, y: 0 };
@@ -108,8 +119,9 @@ let selected_card; // 選択したカード
 let selecting_card; // 選択中のカード
 const my_cards = { decks: [], hands: [] };
 const other_cards = { decks: [], hands: [] };
-// クライアント側にカード情報保持
-// 同期は相手クライアントの自分のカード情報をいじる
+// サーバにカード情報保持
+// 最初にまずカード要素前作成
+// 要素全部非表示 -> handsの中にあるカードだけ表示する
 window.addEventListener("load", () => {
     const my_card_place = document.getElementById(mycard_place_id);
     my_card_place.addEventListener("mousedown", mouse_down);

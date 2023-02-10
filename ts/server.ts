@@ -13,6 +13,11 @@ interface Room  {
     user_ids: string[] // ルームに参加しているplayerのidリスト
     player_ids: string[] // ゲームをプレイしているユーザー(配列の長さは2で固定)
     other_ids: string[] // プレイしている人以外ここに入れる
+
+    hands1P: CardPram[] // 1P手札のパラメータ
+    decks1P: CardPram[] // 1P山札のパラメータ
+    hands2P: CardPram[] // 2P手札のパラメータ
+    decks2P: CardPram[] // 2P山札のパラメータ
 }
 
 const app = express();
@@ -29,16 +34,12 @@ app.get("/", (req,res) => {
 let rooms: Room[] = [];
 let users: User[] = [];
 io.on("connection", (socket: socketio.Socket) => {
-
     // 初期接続
     console.log(`[connection] socket.id:${socket.id}`);
-
     // ユーザーにIDを渡す
     io.to(socket.id).emit("receive_id", socket.id);
-
     // ルーム一覧を渡す
     io.emit("update_rooms", rooms);
-
     // Room接続時
     socket.on("create_room", (data) => {
         // Room名やユーザー名を取得
@@ -53,7 +54,14 @@ io.on("connection", (socket: socketio.Socket) => {
         const room = get_room(roomname);
         if (!room) {
             // まだ部屋がないときの処理
-            const room: Room = {roomname: roomname, user_ids:[], player_ids:["",""], other_ids:[] };
+            const room: Room = {
+                roomname: roomname, 
+                user_ids:[], 
+                player_ids:["",""], 
+                other_ids:[], 
+                hands1P:[], decks1P:[], 
+                hands2P:[], decks2P:[] 
+            };
             rooms.push(room);
             room.user_ids.push(socket.id);
             room.player_ids[0] = socket.id;
@@ -62,14 +70,20 @@ io.on("connection", (socket: socketio.Socket) => {
             socket.join(roomname);
             // Roomに参加通知
             io.to(roomname).emit("join_room", data);
-
             //Room内のUserIDリスト送信
             io.to(roomname).emit("update_users", room.user_ids);
             console.log("user ids=", room.user_ids);
-
             // プレイしているユーザーリスト送信
             io.to(roomname).emit("update_plyaer_ids", room.player_ids);
             console.log("player ids=", room.player_ids);
+            const cards_data = {
+                hands1P:room.hands1P,
+                decks1P:room.decks1P,
+                hands2P:room.hands2P,
+                decks2P:room.decks2P,
+            }
+            // ルームのデッキ情報送信
+            io.to(roomname).emit("sync_card_data", cards_data);
         }
         console.log(rooms);
         // ルーム一覧を渡す
@@ -82,7 +96,6 @@ io.on("connection", (socket: socketio.Socket) => {
         // RoomUserリスト送信
         // io.to(roomname).emit("update_users", room_users);
     });
-
     socket.on("join_room", (data) => {
         // Room名やユーザー名を取得
         console.log("[join room] ", data);
@@ -91,39 +104,45 @@ io.on("connection", (socket: socketio.Socket) => {
             id: socket.id,
             username: data.username,
         }
-        const roomname = data.roomname;
+        // userリストに追加
+        users.push(user);
+
+        const roomname:string = data.roomname;
         // 部屋があるか検索
         const room = get_room(roomname);
         if (room) {
             // 既に部屋があるときの処理
             room.user_ids.push(socket.id);
+            // ルームに参加
+            socket.join(roomname);
+            // Roomに参加通知
+            io.to(roomname).emit("join_room", data);
             if (room.player_ids[0]=="") room.player_ids[0] = socket.id;
             else if (room.player_ids[1]=="") room.player_ids[1] = socket.id;
             else room.other_ids.push(socket.id);
-        }
 
-        // ルーム一覧を渡す
-        io.emit("update_rooms", rooms);
-        // userリストに追加
-        users.push(user);
-        // ルームに参加
-        socket.join(roomname);
-        // Roomに参加通知
-        io.to(roomname).emit("join_room", data);
-        //RoomないのUserIDリスト送信
-        if (room) {
-            io.to(roomname).emit("update_users", room.user_ids);
+            // io.to(roomname).emit("update_users", room.user_ids);
             console.log("user ids=", room.user_ids);
             // プレイしているユーザーリスト送信
             io.to(roomname).emit("update_plyaer_ids", room.player_ids);
             console.log("player ids=", room.player_ids);
+
+            const cards_data = {
+                hands1P:room.hands1P,
+                decks1P:room.decks1P,
+                hands2P:room.hands2P,
+                decks2P:room.decks2P,
+            }
+            // ルームのデッキ情報送信
+            io.to(socket.id).emit("sync_card_data", cards_data);
         }
+        // ルーム一覧を渡す
+        io.emit("update_rooms", rooms);
         // RoomのUserリスト取得
         const room_users = get_room_users(roomname);
         console.log("users=", users);
         console.log("room_users=", room_users);
     });
-
     // メッセージ受付時
     socket.on("send_message", (message) => {
         console.log("[send message]", message);
@@ -132,7 +151,6 @@ io.on("connection", (socket: socketio.Socket) => {
         const roomname = get_joined_room_name(socket.id);
         if (roomname) io.to(roomname).emit("receive_message", {username,message});
     });
-
     // ユーザー切断時
     socket.on("disconnect", () => {
         console.log(`[disconnect]: ${socket.id}`);
@@ -172,15 +190,25 @@ io.on("connection", (socket: socketio.Socket) => {
         // io.emit("update_users", users);
     });
 
-    // デッキ受信
-    socket.on("set_cards", (data) => {
-        console.log("[set cards]", data);
+
+    //// カードゲーム関係 ////
+
+    // デッキ情報を受信(デッキファイル読み込み時)
+    socket.on("read_cards", (data) => {
+        console.log("[Read cards]");
         const roomname = get_joined_room_name(socket.id);
         if (roomname) {
-            const room = get_room(roomname);
-            if (room) {
-
+            const room = <Room>get_room(roomname);
+            const player_number:PLAYER_NUMBER = data.player_number; // 何Pの通信か
+            // Roomのデッキ情報に入れる
+            if (player_number=="1P") {
+                room.hands1P = data.hands;
+                room.decks1P = data.decks;
+            } else if (player_number=="2P") {
+                room.hands2P = data.hands;
+                room.decks2P = data.decks;
             }
+            io.to(roomname).emit("send_card_data", {player_number:player_number, hands:data.hands, decks:data.decks});
         }
     });
 })

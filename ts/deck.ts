@@ -57,43 +57,63 @@ reader.onload = function(e) {
     const obj = JSON.parse(data);
     console.log("obj = ", obj);
 
+    let hands:CardPram[] = [];
+    let decks:CardPram[] = [];
+
     for (const key of Object.keys(obj)) {
         if (key == "back_img_path") {
             back_img_path = obj.back_img_path;
         } else if (key == "main") {
-            my_cards.decks = set_cards(obj.main.cards);
+            // my_cards.decks = set_cards(obj.main.cards);
+            decks = set_cardPrams(my_number, obj.main.cards);
         } else if (key == "other") {
-            my_cards.hands = set_cards(obj.other.cards, 1);
+            // my_cards.hands = set_cards(obj.other.cards, 1);
+            hands = set_cardPrams(my_number, obj.other.cards);
         }
     }
- 
-    const player_number = (socket_id=="")?get_player_number(socket_id):0;
-    const send_data = {player:player_number, cards:my_cards};
-    if (socket) socket.emit("set_cards", send_data);
-
+    // handsのカードの位置調整
     let count = 0;
-    for (const card of my_cards.hands) {
+    for (const card of hands) {
         const x = 45 * ((count%2==0)?0:1) + SCREEN_POS.x;
         const y = Math.floor(count/2) * 63 + SCREEN_POS.y;
-        card.move(x,y,1);
-        set_card_element(card);
+        card.pos = {x:x,y:y};
+        card.visible = true;
         count++;
     }
+    const send_data = {player_number:my_number, hands:hands, decks:decks};
+    // serverにデッキ情報を送る
+    if (socket) socket.emit("read_cards", send_data);
+
+    // let count = 0;
+    // for (const card of my_cards.hands) {
+    //     const x = 45 * ((count%2==0)?0:1) + SCREEN_POS.x;
+    //     const y = Math.floor(count/2) * 63 + SCREEN_POS.y;
+    //     card.move(x,y,1);
+    //     set_card_element(card);
+    //     count++;
+    // }
 }
 
-
-function set_cards(obj:any, type:number=0) {
-    const cards:Card[] = [];
+function set_cardPrams(player_number:PLAYER_NUMBER, obj:any) {
+    const cardParams:CardPram[] = [];
     for (const carddata of obj) {      
         for (let i=0;i<carddata.count;i++) {
             const img_path_list = create_img_path_list(carddata);
             const cardPram:CardPram = set_cardParam(id, player_number, img_path_list)
-            const card = new Card(cardPram);
-
-            if (type==0) cards.push(card);
-            else cards.push(card);
+            cardParams.push(cardPram);
             id++;
         }
+    }
+    return cardParams;
+}
+
+// サーバーから受けとたカードのパラメーター情報配列をもとにカードを生成
+function create_cards(params:CardPram[]) {
+    const cards:Card[] = [];
+    for (const param of params) {
+        const card = new Card(param);
+        cards.push(card);
+        set_card_element(card);
     }
     return cards;
 }

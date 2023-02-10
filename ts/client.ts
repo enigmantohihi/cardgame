@@ -1,8 +1,7 @@
 type PLAYER_NUMBER = "1P" | "2P" | "Audience";
-let player_number:PLAYER_NUMBER; // 自分が1P,2Pどちらかを保持
+let my_number:PLAYER_NUMBER; // 自分が1P,2Pどちらかを保持
 let socket_id:string;
 let socket:any;
-let userid_list:string[] = [];
 
 window.addEventListener("load", () => {
     // @ts-ignore
@@ -49,8 +48,6 @@ window.addEventListener("load", () => {
         });
         socket.on("update_users", ($userid_list:string[]) => {
             // set_users(users);
-            userid_list = $userid_list;
-            console.log("userid_list=", userid_list);
         });
         socket.on("update_rooms", (rooms:any[]) => {
             console.log("update_rooms");
@@ -72,17 +69,40 @@ window.addEventListener("load", () => {
 
         // card用
         socket.on("update_plyaer_ids", (player_ids:string[]) => {
-            player_number = 
+            my_number = 
                 (player_ids[0]==socket_id)?"1P":
                 (player_ids[1]==socket_id)?"2P":
                 "Audience";
-            console.log("Player Number:",player_number);
+            console.log("Player Number:",my_number);
         });
 
-        socket.on("receive_card", (card:Card) => {
-            console.log("receive card");
-            console.log("card type:", typeof(card));
-            console.log("card:", card);
+        // Room入室時Roomのデッキ情報を取得して表示
+        socket.on("sync_card_data", (data:any) => {
+            console.log("sync data:", data);
+            if (my_number == "1P" || my_number=="Audience") {
+                my_cards.hands = create_cards(data.hands1P);
+                my_cards.decks = create_cards(data.decks1P);
+                other_cards.hands = create_cards(data.hands2P);
+                other_cards.decks = create_cards(data.decks2P);
+            } else if (my_number == "2P") {
+                my_cards.hands = create_cards(data.hands2P);
+                my_cards.decks = create_cards(data.decks2P);
+                other_cards.hands = create_cards(data.hands1P);
+                other_cards.decks = create_cards(data.decks1P);
+            }
+        });
+
+        // 誰かがファイル入力からデッキ情報セットしたらサーバーを通ってここに来る
+        socket.on("send_card_data", (data:any) => {
+            console.log("send_card_data card");
+            const player_number:PLAYER_NUMBER = data.player_number;
+            if (my_number == player_number) {
+                my_cards.hands = create_cards(data.hands);
+                my_cards.decks = create_cards(data.decks);
+            } else {
+                other_cards.hands = create_cards(data.hands);
+                other_cards.decks = create_cards(data.decks);
+            }
         });
     }      
 });
@@ -109,16 +129,4 @@ function join_room(roomname:string) {
         set_username(username);
     }
     socket.emit("join_room", { username,roomname });
-}
-
-// 自分が何Pか取得
-function get_player_number(socket_id: string) {
-    let count = 0;
-    for (const id of userid_list) {
-        if (socket_id==id) {
-            break;
-        }
-        count++;
-    }
-    return count;
 }

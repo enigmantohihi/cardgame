@@ -38,7 +38,14 @@ io.on("connection", (socket) => {
         const room = get_room(roomname);
         if (!room) {
             // まだ部屋がないときの処理
-            const room = { roomname: roomname, user_ids: [], player_ids: ["", ""], other_ids: [] };
+            const room = {
+                roomname: roomname,
+                user_ids: [],
+                player_ids: ["", ""],
+                other_ids: [],
+                hands1P: [], decks1P: [],
+                hands2P: [], decks2P: []
+            };
             rooms.push(room);
             room.user_ids.push(socket.id);
             room.player_ids[0] = socket.id;
@@ -52,6 +59,14 @@ io.on("connection", (socket) => {
             // プレイしているユーザーリスト送信
             io.to(roomname).emit("update_plyaer_ids", room.player_ids);
             console.log("player ids=", room.player_ids);
+            const cards_data = {
+                hands1P: room.hands1P,
+                decks1P: room.decks1P,
+                hands2P: room.hands2P,
+                decks2P: room.decks2P,
+            };
+            // ルームのデッキ情報送信
+            io.to(roomname).emit("sync_card_data", cards_data);
         }
         console.log(rooms);
         // ルーム一覧を渡す
@@ -71,35 +86,40 @@ io.on("connection", (socket) => {
             id: socket.id,
             username: data.username,
         };
+        // userリストに追加
+        users.push(user);
         const roomname = data.roomname;
         // 部屋があるか検索
         const room = get_room(roomname);
         if (room) {
             // 既に部屋があるときの処理
             room.user_ids.push(socket.id);
+            // ルームに参加
+            socket.join(roomname);
+            // Roomに参加通知
+            io.to(roomname).emit("join_room", data);
             if (room.player_ids[0] == "")
                 room.player_ids[0] = socket.id;
             else if (room.player_ids[1] == "")
                 room.player_ids[1] = socket.id;
             else
                 room.other_ids.push(socket.id);
-        }
-        // ルーム一覧を渡す
-        io.emit("update_rooms", rooms);
-        // userリストに追加
-        users.push(user);
-        // ルームに参加
-        socket.join(roomname);
-        // Roomに参加通知
-        io.to(roomname).emit("join_room", data);
-        //RoomないのUserIDリスト送信
-        if (room) {
-            io.to(roomname).emit("update_users", room.user_ids);
+            // io.to(roomname).emit("update_users", room.user_ids);
             console.log("user ids=", room.user_ids);
             // プレイしているユーザーリスト送信
             io.to(roomname).emit("update_plyaer_ids", room.player_ids);
             console.log("player ids=", room.player_ids);
+            const cards_data = {
+                hands1P: room.hands1P,
+                decks1P: room.decks1P,
+                hands2P: room.hands2P,
+                decks2P: room.decks2P,
+            };
+            // ルームのデッキ情報送信
+            io.to(socket.id).emit("sync_card_data", cards_data);
         }
+        // ルーム一覧を渡す
+        io.emit("update_rooms", rooms);
         // RoomのUserリスト取得
         const room_users = get_room_users(roomname);
         console.log("users=", users);
@@ -154,14 +174,24 @@ io.on("connection", (socket) => {
         io.emit("update_rooms", rooms);
         // io.emit("update_users", users);
     });
-    // デッキ受信
-    socket.on("set_cards", (data) => {
-        console.log("[set cards]", data);
+    //// カードゲーム関係 ////
+    // デッキ情報を受信(デッキファイル読み込み時)
+    socket.on("read_cards", (data) => {
+        console.log("[Read cards]");
         const roomname = get_joined_room_name(socket.id);
         if (roomname) {
             const room = get_room(roomname);
-            if (room) {
+            const player_number = data.player_number; // 何Pの通信か
+            // Roomのデッキ情報に入れる
+            if (player_number == "1P") {
+                room.hands1P = data.hands;
+                room.decks1P = data.decks;
             }
+            else if (player_number == "2P") {
+                room.hands2P = data.hands;
+                room.decks2P = data.decks;
+            }
+            io.to(roomname).emit("send_card_data", { player_number: player_number, hands: data.hands, decks: data.decks });
         }
     });
 });
