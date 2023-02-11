@@ -3,7 +3,8 @@ interface Size { width: number, height: number }
 interface CardElement { id:number, parent: HTMLElement, img: HTMLImageElement }
 interface Cards { decks: Card[], hands: Card[] }
 type PLAYER_NUMBER = "1P" | "2P" | "Audience";
-type Action = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release";
+type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release";
+type CardEvent = "Draw" | "Back";
 /*
 player_number:PLAYER_NUMBER,
 action:Action,
@@ -64,7 +65,7 @@ function mouse_down(e:any) {
         console.log("change mode call");
         const send_data = {
             player_number:my_number,
-            action: "ChangeMode" as Action,
+            action: "ChangeMode" as CardAction,
             pos: {x:offset_pos.x, y:offset_pos.y}
         }
         socket.emit("receive_action", send_data);
@@ -72,7 +73,7 @@ function mouse_down(e:any) {
     console.log("select call");
         const send_data = {
             player_number:my_number,
-            action: "Select" as Action,
+            action: "Select" as CardAction,
             pos: {x:offset_pos.x, y:offset_pos.y}
         }
         socket.emit("receive_action", send_data);
@@ -84,7 +85,7 @@ function mouse_move(e:any) {
     console.log("move call");
     const send_data = {
         player_number:my_number,
-        action: "Move" as Action,
+        action: "Move" as CardAction,
         pos: {x:offset_pos.x, y:offset_pos.y}
     }
     socket.emit("receive_action", send_data);
@@ -99,7 +100,7 @@ function mouse_up(e:any) {
         console.log("rotate call");
         const send_data = {
             player_number:my_number,
-            action: "Rotate" as Action,
+            action: "Rotate" as CardAction,
             pos: {x:offset_pos.x, y:offset_pos.y}
         }
         socket.emit("receive_action", send_data);
@@ -109,7 +110,7 @@ function mouse_up(e:any) {
     console.log("release call");
     const send_data = {
         player_number:my_number,
-        action: "Release" as Action,
+        action: "Release" as CardAction,
         pos: {x:offset_pos.x, y:offset_pos.y}
     }
     socket.emit("receive_action", send_data);
@@ -140,4 +141,27 @@ function offsetPos(x:number, y:number) {
         y: y - card_place_pos.y
     }
     return result;
+}
+
+function draw_card() {
+    const deck_index_input = <HTMLInputElement>document.getElementById(deck_index_input_id);
+    const radio1 = <HTMLInputElement>document.getElementById(draw_radio_id+0);
+    const radio2 = <HTMLInputElement>document.getElementById(draw_radio_id+1);
+    const index = Number(deck_index_input.value)-1;
+    const front = (radio1.checked)?true:false;
+    
+    // serverに送信
+}
+function back_card() {
+    const back_index_input = <HTMLInputElement>document.getElementById(back_index_input_id);
+    const radio1 = <HTMLInputElement>document.getElementById(back_radio_id+0);
+    const radio2 = <HTMLInputElement>document.getElementById(back_radio_id+1);
+    const offset = (radio1.checked)?-1:0;
+    const index = Number(back_index_input.value) + offset; // 何番目に戻すか
+
+    // serverに送信
+}
+
+function updata_states() {
+
 }

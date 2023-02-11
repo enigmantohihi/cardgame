@@ -121,3 +121,21 @@ function offsetPos(x, y) {
     };
     return result;
 }
+function draw_card() {
+    const deck_index_input = document.getElementById(deck_index_input_id);
+    const radio1 = document.getElementById(draw_radio_id + 0);
+    const radio2 = document.getElementById(draw_radio_id + 1);
+    const index = Number(deck_index_input.value) - 1;
+    const front = (radio1.checked) ? true : false;
+    // serverに送信
+}
+function back_card() {
+    const back_index_input = document.getElementById(back_index_input_id);
+    const radio1 = document.getElementById(back_radio_id + 0);
+    const radio2 = document.getElementById(back_radio_id + 1);
+    const offset = (radio1.checked) ? -1 : 0;
+    const index = Number(back_index_input.value) + offset; // 何番目に戻すか
+    // serverに送信
+}
+function updata_states() {
+}

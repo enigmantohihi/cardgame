@@ -44,8 +44,8 @@ io.on("connection", (socket) => {
                 user_ids: [],
                 player_ids: ["", ""],
                 other_ids: [],
-                selecting_card1P: null, hands1P: [], decks1P: [],
-                selecting_card2P: null, hands2P: [], decks2P: []
+                selected_card1P: null, selecting_card1P: null, hands1P: [], decks1P: [],
+                selected_card2P: null, selecting_card2P: null, hands2P: [], decks2P: []
             };
             rooms.push(room);
             room.user_ids.push(socket.id);
@@ -392,4 +392,42 @@ function get_card(x, y, player_number, room) {
     }
     console.log("cant get card");
     return false;
+}
+function draw_card(index, front, player_number, room) {
+    const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
+    const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
+    const card = decks.splice(index, 1)[0];
+    card.mode = (front) ? 0 : 1;
+    card.visible = true;
+    hands.push(card);
+}
+function back_card(index, player_number, room) {
+    const back_card = (player_number == "1P") ? room.selected_card1P : room.selected_card2P;
+    if (!back_card)
+        return;
+    const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
+    const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
+    back_card.visible = false;
+    // 手札(デッキ外)の中から選択したカードのインデックスを取得
+    const pull_index = hands.indexOf(back_card);
+    hands.splice(pull_index, 1);
+    decks.splice(index, 0, back_card);
+    if (player_number == "1P")
+        room.selected_card1P = null;
+    else if (player_number == "2P")
+        room.selected_card2P = null;
+}
+function select_id_draw(id_list, front, player_number, room) {
+    const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
+    const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
+    for (const id of id_list) {
+        const card = decks.find($card => $card.id == id);
+        if (card) {
+            card.mode = (front) ? 0 : 1;
+            // デッキの中から選択したカードのインデックスを取得
+            const index = decks.indexOf(card);
+            decks.splice(index, 1);
+            hands.push(card);
+        }
+    }
 }
