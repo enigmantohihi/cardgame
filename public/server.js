@@ -243,6 +243,22 @@ io.on("connection", (socket) => {
             }
         }
     });
+    // 山札,手札のイベント処理(ドローや山札に戻すなど)
+    socket.on("receive_event", (data) => {
+        console.log("[Receive Event]", data);
+        const roomname = get_joined_room_name(socket.id);
+        if (!roomname)
+            return;
+        const room = get_room(roomname);
+        const player_number = data.player_number; // 何Pの通信か
+        const event = data.event; // どのアクションか
+        if (event == "Draw") {
+            const card_list = draw_card(data.index, data.front, player_number, room);
+            if (!card_list)
+                return;
+            io.to(roomname).emit("update_decks", { player_number: player_number, card_list: card_list });
+        }
+    });
 });
 const PORT = process.env.PORT || (0, config_1.default)();
 server.listen(PORT, () => {
@@ -397,14 +413,18 @@ function draw_card(index, front, player_number, room) {
     const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
     const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
     const card = decks.splice(index, 1)[0];
+    if (!card)
+        return false;
     card.mode = (front) ? 0 : 1;
+    card.pos = { x: 250, y: 250 };
     card.visible = true;
     hands.push(card);
+    return [card];
 }
 function back_card(index, player_number, room) {
     const back_card = (player_number == "1P") ? room.selected_card1P : room.selected_card2P;
     if (!back_card)
-        return;
+        return false;
     const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
     const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
     back_card.visible = false;
@@ -416,18 +436,23 @@ function back_card(index, player_number, room) {
         room.selected_card1P = null;
     else if (player_number == "2P")
         room.selected_card2P = null;
+    return [back_card];
 }
 function select_id_draw(id_list, front, player_number, room) {
     const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
     const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
+    const result = [];
     for (const id of id_list) {
         const card = decks.find($card => $card.id == id);
         if (card) {
             card.mode = (front) ? 0 : 1;
+            card.visible = true;
             // デッキの中から選択したカードのインデックスを取得
             const index = decks.indexOf(card);
             decks.splice(index, 1);
             hands.push(card);
+            result.push(card);
         }
     }
+    return result;
 }

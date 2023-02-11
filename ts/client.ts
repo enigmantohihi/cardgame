@@ -103,6 +103,14 @@ window.addEventListener("load", () => {
             const elements = find_card_element(player_number, target_id);
             if (elements) update_card_element(card, elements);
         });
+
+        // 手札と山札系イベント受信
+        socket.on("update_decks", (data:any) => {
+            console.log("Updata Decks:", data);
+            const player_number:PLAYER_NUMBER = data.player_number;
+            const card_list:Card[] = data.card_list;
+            transport_card(card_list);
+        });
     }      
 });
 

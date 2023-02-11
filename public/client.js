@@ -97,6 +97,13 @@ window.addEventListener("load", () => {
             if (elements)
                 update_card_element(card, elements);
         });
+        // 手札と山札系イベント受信
+        socket.on("update_decks", (data) => {
+            console.log("Updata Decks:", data);
+            const player_number = data.player_number;
+            const card_list = data.card_list;
+            transport_card(card_list);
+        });
     }
 });
 // 部屋作成

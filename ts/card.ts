@@ -4,7 +4,7 @@ interface CardElement { id:number, parent: HTMLElement, img: HTMLImageElement }
 interface Cards { decks: Card[], hands: Card[] }
 type PLAYER_NUMBER = "1P" | "2P" | "Audience";
 type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release";
-type CardEvent = "Draw" | "Back";
+type CardEvent = "Draw" | "Back" | "SelectDraw";
 /*
 player_number:PLAYER_NUMBER,
 action:Action,
@@ -41,7 +41,9 @@ const keys = {
 }
 let selected_card: Card | null; // 選択したカード
 let selecting_card: Card | null; // 選択中のカード
-
+let mydeck_count: number;
+let otherdeck_count: number;
+let modal_select_id: number[] = [];
 // サーバにカード情報保持
 // 最初にまずカード要素前作成
 // 要素全部非表示 -> handsの中にあるカードだけ表示する
@@ -143,6 +145,7 @@ function offsetPos(x:number, y:number) {
     return result;
 }
 
+// ドローボタンを押した時に呼ぶ
 function draw_card() {
     const deck_index_input = <HTMLInputElement>document.getElementById(deck_index_input_id);
     const radio1 = <HTMLInputElement>document.getElementById(draw_radio_id+0);
@@ -151,7 +154,16 @@ function draw_card() {
     const front = (radio1.checked)?true:false;
     
     // serverに送信
+    const send_data = {
+        player_number:my_number,
+        event: "Draw" as CardEvent,
+        index:index,
+        front:front
+    }
+    socket.emit("receive_event", send_data);
 }
+
+ // 戻すボタンを押した時に呼ぶ
 function back_card() {
     const back_index_input = <HTMLInputElement>document.getElementById(back_index_input_id);
     const radio1 = <HTMLInputElement>document.getElementById(back_radio_id+0);
@@ -160,6 +172,85 @@ function back_card() {
     const index = Number(back_index_input.value) + offset; // 何番目に戻すか
 
     // serverに送信
+    const send_data = {
+        player_number:my_number,
+        event: "Back" as CardEvent,
+        index:index
+    }
+    socket.emit("receive_event", send_data);
+}
+
+
+function show_decks_call() {
+    // serverにclientのshow_decks()を呼ぶCallを送る
+}
+
+// showボタンを押した時に呼ぶ 山札の一覧をmodalに表示
+function show_decks(card_list:Card[]) {
+    const radio1 = <HTMLInputElement>document.getElementById(show_radio_id+0);
+    const radio2 = <HTMLInputElement>document.getElementById(show_radio_id+1);
+    const mode = (radio1.checked)?0:1;
+    const modal_card_parent = <HTMLElement>document.getElementById(modal_card_parent_id);
+    while (modal_card_parent.firstChild) {
+        modal_card_parent.removeChild(modal_card_parent.firstChild);
+    }
+    for (const card of card_list) {
+        const modal_card = create_modal_card(card, mode);
+        modal_card_parent.appendChild(modal_card);
+    } 
+    modal_select_id = [];
+}
+
+function create_modal_card(card: Card, mode: number) {
+    const modal_card = document.createElement("img");
+    modal_card.className = "modal_card";
+    modal_card.src = card.img_path_list[mode];
+    const size = card.img_size[mode];
+    set_element_size(modal_card, size);
+    modal_card.onclick = function() {
+        console.log("click id=", card.id);
+        select_id(card.id);
+        if (modal_select_id.includes(card.id)) {
+            modal_card.classList.add("border");
+            modal_card.classList.add("border-4");
+            modal_card.classList.add("border-warning");
+        } else {
+            modal_card.classList.remove("border");
+            modal_card.classList.remove("border-4");
+            modal_card.classList.remove("border-warning");
+        }
+    }
+    return modal_card;
+}
+function select_id(id: number) {
+    const index = modal_select_id.indexOf(id);
+    if (index==-1) {
+        // 選択したIDリストの中に選択したIDがないときリストに追加
+        modal_select_id.push(id);
+    } else {
+        // リストから削除
+        modal_select_id.splice(index,1);
+    }
+}
+
+
+// modal中の選択したカードを山札から手札に引き抜く
+function selected_draw() {
+    console.log("selected draw");
+    if (modal_select_id.length <= 0) return;
+    const radio1 = <HTMLInputElement>document.getElementById(draw_radio_id+0);
+    const radio2 = <HTMLInputElement>document.getElementById(draw_radio_id+1);
+    const front = (radio1.checked)?true:false;
+    // serverに送信
+    const send_data = {
+        player_number:my_number,
+        event: "SelectDraw" as CardEvent,
+        id_list:modal_select_id,
+        front:front
+    }
+    socket.emit("receive_event", send_data);
+
+    modal_select_id = [];
 }
 
 function updata_states() {

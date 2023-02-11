@@ -30,6 +30,7 @@ const back_button_id = "buck_button";
 const show_radio_id = "show_radio";
 const show_button_id = "show_button";
 const deck_list_modal_id = "deck_list_modal";
+const modal_card_parent_id = "modal_card_parent";
 const modal_selected_button_id = "modal_selected_button";
 
 const zoom_overlay_id = "zoom_overlay";
@@ -126,17 +127,19 @@ function create_ui(ui_root:Element) {
     parent.classList.add("text-center");
     create_input_number(parent, deck_index_input_id);
     create_radio(parent, draw_radio_id, "表", "裏");
-    create_button(parent, draw_button_id, "引く");
+    const draw_button = create_button(parent, draw_button_id, "引く");
+    draw_button.onclick = function() { draw_card();}
     parent.appendChild(document.createElement("hr"));
 
     create_input_number(parent, back_index_input_id);
     create_radio(parent, back_radio_id, "上", "下");
-    create_button(parent, back_button_id, "戻す");
+    const back_button = create_button(parent, back_button_id, "戻す");
+    back_button.onclick = function() { back_card();}
     parent.appendChild(document.createElement("hr"));
 
     create_radio(parent, show_radio_id, "表", "裏");
-    create_button(parent, show_button_id, "一覧", true);
-
+    const show_button = create_button(parent, show_button_id, "一覧", true);
+    // show_button.onclick = function() { show_decks_call();}
     ui_root.appendChild(parent);
 }
 
@@ -177,20 +180,22 @@ function create_radio(parent:Element, name:string, text1:string, text2:string) {
     radio_parent.appendChild(radio2);
     parent.appendChild(radio_parent);
 }
-function create_button(parent:Element, name:string, text:string, modal:boolean=false) {
+function create_button(parent:Element, id:string, text:string, modal:boolean=false) {
     if (modal) {
         const div = document.createElement("div");
         const button = 
-            `<button id="${name}" type="button" class="btn btn-primary w-80 mb-1" data-bs-toggle="modal" data-bs-target="#${deck_list_modal_id}">${text}</button>`;
+            `<button id="${id}" type="button" class="btn btn-primary w-80 mb-1" onclick="show_decks_call()" data-bs-toggle="modal" data-bs-target="#${deck_list_modal_id}">${text}</button>`;
         div.innerHTML = button;
         parent.appendChild(div);
+        return div;
     } else {
         const button = document.createElement("button");
-        button.id = name;
+        button.id = id;
         button.type = "button";
         button.className = "btn btn-primary w-80 mb-1";
         button.textContent = text;
         parent.appendChild(button);
+        return button;
     }
 }
 
@@ -210,7 +215,7 @@ function create_decklist_modal(parent:Element) {
                         <span class="d-inline">後尾→</span>
                     </div>
                     <div class="modal-body">
-                        <div id="modal_card_parent" class="d-inline-flex align-items-center">
+                        <div id="${modal_card_parent_id}" class="d-inline-flex align-items-center">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -317,34 +322,6 @@ function get_deck_pos(id:number) {
     console.log("deck pos=", get_element_pos(deck));
     return get_element_pos(deck);
 }
-
-// Cardクラスをもとにhtml上に表示
-// function set_card_element(card: Card) {
-//     const element = document.createElement("div");
-//     const element_img = document.createElement("img")
-//     const elements: CardElement = { id:0, parent: element, img: element_img };
-//     element.appendChild(element_img);
-
-//     const type = 
-//         ((my_number=="1P"||my_number=="Audience")&&card.owner=="1P")?1:
-//         (my_number=="2P"&&card.owner=="2P")?1:0;
-//     const card_place = <HTMLElement>document.getElementById((type==1)?mycard_place_id:othercard_place_id);
-//     card_place.appendChild(element);
-
-//     element.id = "card"+String(card.id);
-//     element.classList.add("card");
-//     add_border(element);
-//     set_element_size(element, {width:card.parent_size.width, height:card.parent_size.height });
-//     element.style.left = `${card.pos.x}px`;
-//     element.style.top = `${card.pos.y}px`;
-
-//     element_img.className = "card_img"
-//     element_img.src = card.display(card.mode);
-
-//     card.update_card_element();
-//     card.set_visible();
-//     return elements;
-// }
 
 function set_element_visible(card:Card, element:HTMLElement) {
     if (card.visible) element.classList.remove("d-none");

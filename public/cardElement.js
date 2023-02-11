@@ -41,6 +41,20 @@ function update_card_element(card, elements) {
     set_element_visible(card, elements.parent);
     elements.img.src = card.img_path_list[card.mode];
 }
+// 山札と手札間でカードが移動したときに呼ぶ
+function transport_card(cards) {
+    // const player_number:PLAYER_NUMBER = (my_number=="1P" || my_number=="Audience")?"1P":"2P";
+    for (const card of cards) {
+        const id = card.id;
+        const element = find_card_element(card.owner, id);
+        if (element) {
+            update_card_element(card, element);
+        }
+    }
+}
+// デッキと場の間の移動アニメーション
+function move_animation(card, element) {
+}
 // カードのidと所有者idから検索
 function find_card_element(owner, target_id) {
     const player_number = (my_number == "1P" || my_number == "Audience") ? "1P" : "2P";
