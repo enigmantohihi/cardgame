@@ -1,7 +1,7 @@
-const BOARD_SIZE: Size = { width:800, height:500 };
+const BOARD_SIZE: Size = { width:800, height:400 };
 const BOARD_POS: Position = { x:0, y:0 };
 
-const SCREEN_SIZE: Size = { width:600, height:500 };
+const SCREEN_SIZE: Size = { width:600, height:400 };
 const SCREEN_POS: Position = { x:0, y:0 };
 
 const UIROOT_SIZE: Size = { width:100, height:500};
@@ -125,13 +125,18 @@ function create_board(root:Element, type:number=0) {
 function create_ui(ui_root:Element) {
     const parent = document.createElement("div");
     parent.classList.add("text-center");
-    create_input_number(parent, deck_index_input_id);
+
+    const deck_index_input = create_input_number(parent, deck_index_input_id);
+    deck_index_input.oninput = function(){ set_input_index(deck_index_input)};
+    set_input_index(deck_index_input)
     create_radio(parent, draw_radio_id, "表", "裏");
     const draw_button = create_button(parent, draw_button_id, "引く");
     draw_button.onclick = function() { draw_card();}
     parent.appendChild(document.createElement("hr"));
 
-    create_input_number(parent, back_index_input_id);
+    const back_index_input = create_input_number(parent, back_index_input_id);
+    back_index_input.oninput = function(){ set_input_index(back_index_input)};
+    set_input_index(back_index_input);
     create_radio(parent, back_radio_id, "上", "下");
     const back_button = create_button(parent, back_button_id, "戻す");
     back_button.onclick = function() { back_card();}
@@ -153,6 +158,7 @@ function create_input_number(parent:Element, name:string) {
     input.className = "w-50 text-center";
     parent.appendChild(p);
     parent.appendChild(input);
+    return input;
 }
 function create_radio(parent:Element, name:string, text1:string, text2:string) {
     const radio_parent = document.createElement("div");
@@ -220,7 +226,7 @@ function create_decklist_modal(parent:Element) {
                     </div>
                     <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button id="${modal_selected_button_id}" type="button" class="btn btn-primary" data-bs-dismiss="modal">完了</button>
+                    <button id="${modal_selected_button_id}" type="button" onclick="selected_draw()" class="btn btn-primary" data-bs-dismiss="modal">完了</button>
                     </div>
                 </div>
             </div>
@@ -340,5 +346,22 @@ function set_element_mode(card:Card, elements:CardElement) {
     } else {
         set_element_size(elements.parent, img_size);
         set_element_pos(elements.img, {x:0,y:0});
+    }
+}
+
+function set_input_index(input:HTMLInputElement) {
+    const value = Number(input.value);
+    if (value <= 0) {
+        input.value = String(mydeck_count);
+    } else if (mydeck_count < value) {
+        input.value = String(1);
+    }
+}
+function adjust_input(input_element: HTMLInputElement) {
+    const value = Number(input_element.value);
+    if (value <= 0) {
+        input_element.value = "1";
+    } else if (mydeck_count < value) {
+        input_element.value = String(mydeck_count);
     }
 }

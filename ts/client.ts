@@ -20,6 +20,7 @@ window.addEventListener("load", () => {
         on_messages();
         on_board();
         on_input_file();
+        updata_states();
         const send_button = <HTMLInputElement>document.getElementById(send_message_button_id);
         send_button.onclick = function() {
             const message = get_message_textbox().value;
@@ -84,6 +85,7 @@ window.addEventListener("load", () => {
             create_card_elements(player1, data.decks1P);
             create_card_elements(player2, data.hands2P);
             create_card_elements(player2, data.decks2P);
+        
         });
 
         // 誰かがファイル入力からデッキ情報セットしたらサーバーを通ってここに来る
@@ -111,6 +113,20 @@ window.addEventListener("load", () => {
             const card_list:Card[] = data.card_list;
             transport_card(card_list);
         });
+
+        socket.on("get_decks", (data:any) => {
+            console.log("Get Deck", data);
+            const player_number:PLAYER_NUMBER = (my_number=="1P" || my_number=="Audience")?"1P":"2P";
+            const deck_length = data.deck_length;
+            if (player_number==data.player_number) mydeck_count = deck_length;
+            else otherdeck_count = deck_length;
+            updata_states();
+        });
+        socket.on("show_decks", (data:any) => {
+            console.log("Show Deck", data);
+            const card_list:Card[] = data.deck;
+            show_decks(card_list);
+        })
     }      
 });
 

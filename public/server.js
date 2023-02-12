@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = __importDefault(require("socket.io"));
 const config_1 = __importDefault(require("./config"));
-const SCREEN_SIZE = { width: 600, height: 500 };
+const SCREEN_SIZE = { width: 600, height: 400 };
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.default.Server(server);
@@ -186,12 +186,13 @@ io.on("connection", (socket) => {
             // Roomのデッキ情報に入れる
             if (player_number == "1P") {
                 room.hands1P = convert_card(data.hands);
-                console.log("card display:", room.hands1P[0].display());
                 room.decks1P = convert_card(data.decks);
+                io.to(roomname).emit("get_decks", { player_number: player_number, deck_length: data.decks.length });
             }
             else if (player_number == "2P") {
                 room.hands2P = convert_card(data.hands);
                 room.decks2P = convert_card(data.decks);
+                io.to(roomname).emit("get_decks", { player_number: player_number, deck_length: data.decks.length });
             }
             io.to(roomname).emit("send_card_data", { player_number: player_number, hands: data.hands, decks: data.decks });
         }
@@ -230,12 +231,16 @@ io.on("connection", (socket) => {
                 const card = get_card(data.pos.x, data.pos.y, player_number, room);
                 if (!card)
                     return;
-                if (player_number == "1P")
+                if (player_number == "1P") {
                     room.selecting_card1P = card;
-                else
+                    room.selected_card1P = card;
+                }
+                else {
                     room.selecting_card2P = card;
+                    room.selected_card2P = card;
+                }
             }
-            else {
+            else if (action == "Release") {
                 if (player_number == "1P")
                     room.selecting_card1P = null;
                 else
@@ -252,11 +257,32 @@ io.on("connection", (socket) => {
         const room = get_room(roomname);
         const player_number = data.player_number; // 何Pの通信か
         const event = data.event; // どのアクションか
+        const deck_list = (player_number == "1P") ? room.decks1P : room.decks2P;
         if (event == "Draw") {
             const card_list = draw_card(data.index, data.front, player_number, room);
             if (!card_list)
                 return;
             io.to(roomname).emit("update_decks", { player_number: player_number, card_list: card_list });
+            io.to(roomname).emit("get_decks", { player_number: player_number, deck_length: deck_list.length });
+        }
+        else if (event == "Back") {
+            const card_list = back_card(data.index, player_number, room);
+            if (!card_list)
+                return;
+            io.to(roomname).emit("update_decks", { player_number: player_number, card_list: card_list });
+            io.to(roomname).emit("get_decks", { player_number: player_number, deck_length: deck_list.length });
+        }
+        else if (event == "GetDeck") {
+            if (!deck_list)
+                return;
+            io.to(roomname).emit("show_decks", { deck: deck_list });
+        }
+        else if (event == "SelectDraw") {
+            const card_list = select_id_draw(data.id_list, data.front, player_number, room);
+            if (!card_list)
+                return;
+            io.to(roomname).emit("update_decks", { player_number: player_number, card_list: card_list });
+            io.to(roomname).emit("get_decks", { player_number: player_number, deck_length: deck_list.length });
         }
     });
 });

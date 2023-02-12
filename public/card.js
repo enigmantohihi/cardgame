@@ -24,8 +24,8 @@ const keys = {
 };
 let selected_card; // 選択したカード
 let selecting_card; // 選択中のカード
-let mydeck_count;
-let otherdeck_count;
+let mydeck_count = 0;
+let otherdeck_count = 0;
 let modal_select_id = [];
 // サーバにカード情報保持
 // 最初にまずカード要素前作成
@@ -155,10 +155,16 @@ function back_card() {
     };
     socket.emit("receive_event", send_data);
 }
+// showボタンを押した時に呼ぶ
 function show_decks_call() {
     // serverにclientのshow_decks()を呼ぶCallを送る
+    const send_data = {
+        player_number: my_number,
+        event: "GetDeck",
+    };
+    socket.emit("receive_event", send_data);
 }
-// showボタンを押した時に呼ぶ 山札の一覧をmodalに表示
+// 山札の一覧をmodalに表示
 function show_decks(card_list) {
     const radio1 = document.getElementById(show_radio_id + 0);
     const radio2 = document.getElementById(show_radio_id + 1);
@@ -225,4 +231,12 @@ function selected_draw() {
     modal_select_id = [];
 }
 function updata_states() {
+    const deck_text0 = document.getElementById(deck_count_text_id + 0);
+    const deck_text1 = document.getElementById(deck_count_text_id + 1);
+    deck_text0.textContent = `${otherdeck_count}枚`;
+    deck_text1.textContent = `${mydeck_count}枚`;
+    const draw_index_input = document.getElementById(deck_index_input_id);
+    const back_index_input = document.getElementById(back_index_input_id);
+    adjust_input(draw_index_input);
+    adjust_input(back_index_input);
 }

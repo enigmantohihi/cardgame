@@ -4,7 +4,7 @@ interface CardElement { id:number, parent: HTMLElement, img: HTMLImageElement }
 interface Cards { decks: Card[], hands: Card[] }
 type PLAYER_NUMBER = "1P" | "2P" | "Audience";
 type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release";
-type CardEvent = "Draw" | "Back" | "SelectDraw";
+type CardEvent = "Draw" | "Back" | "GetDeck" |"SelectDraw";
 /*
 player_number:PLAYER_NUMBER,
 action:Action,
@@ -41,8 +41,8 @@ const keys = {
 }
 let selected_card: Card | null; // 選択したカード
 let selecting_card: Card | null; // 選択中のカード
-let mydeck_count: number;
-let otherdeck_count: number;
+let mydeck_count: number = 0;
+let otherdeck_count: number = 0;
 let modal_select_id: number[] = [];
 // サーバにカード情報保持
 // 最初にまずカード要素前作成
@@ -180,12 +180,17 @@ function back_card() {
     socket.emit("receive_event", send_data);
 }
 
-
+// showボタンを押した時に呼ぶ
 function show_decks_call() {
     // serverにclientのshow_decks()を呼ぶCallを送る
+     const send_data = {
+        player_number:my_number,
+        event: "GetDeck" as CardEvent,
+    }
+    socket.emit("receive_event", send_data);
 }
 
-// showボタンを押した時に呼ぶ 山札の一覧をmodalに表示
+// 山札の一覧をmodalに表示
 function show_decks(card_list:Card[]) {
     const radio1 = <HTMLInputElement>document.getElementById(show_radio_id+0);
     const radio2 = <HTMLInputElement>document.getElementById(show_radio_id+1);
@@ -254,5 +259,13 @@ function selected_draw() {
 }
 
 function updata_states() {
+    const deck_text0 = <HTMLElement>document.getElementById(deck_count_text_id+0);
+    const deck_text1 = <HTMLElement>document.getElementById(deck_count_text_id+1);
+    deck_text0.textContent = `${otherdeck_count}枚`;
+    deck_text1.textContent = `${mydeck_count}枚`;
 
+    const draw_index_input = <HTMLInputElement>document.getElementById(deck_index_input_id);
+    const back_index_input = <HTMLInputElement>document.getElementById(back_index_input_id);
+    adjust_input(draw_index_input);
+    adjust_input(back_index_input);
 }
