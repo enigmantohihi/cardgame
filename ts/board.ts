@@ -245,6 +245,7 @@ function create_overlay(parent:Element) {
 }
 function zoom_card(img_path:string) {
     const overlay = <HTMLElement>document.getElementById(zoom_overlay_id);
+    overlay.style.left = `${window.pageXOffset}px`;
     overlay.style.top = `${window.pageYOffset}px`;
     overlay.style.display = "block";
     overlay.onclick = function() { overlay.style.display = "none";}

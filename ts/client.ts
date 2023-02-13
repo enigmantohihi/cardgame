@@ -102,6 +102,7 @@ window.addEventListener("load", () => {
             const player_number:PLAYER_NUMBER = data.player_number;
             const target_id = data.card.id;
             const card:Card = data.card;
+            selected_card = card;
             const elements = find_card_element(player_number, target_id);
             if (elements) update_card_element(card, elements);
         });

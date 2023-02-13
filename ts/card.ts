@@ -121,7 +121,7 @@ function key_press(e: any) {
     if(e.key === 'a' || e.key === 'A'){
         keys.A = true;
     } else if(e.key === 'z' || e.key === 'Z'){
-        // if(selected_card)zoom_card(selected_card.display());
+        if(selected_card)zoom_card(selected_card.img_path_list[selected_card.mode]);
     }
 }
 function key_up(e: any) {
