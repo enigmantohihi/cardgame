@@ -27,7 +27,7 @@ function create_card_element(card) {
     const player_number = (my_number == "1P" || my_number == "Audience") ? "1P" : "2P";
     element.id = `card${card.id}_${player_number}`;
     element.classList.add("card");
-    add_border(element);
+    // add_border(element);
     element_img.className = "card_img";
     update_card_element(card, elements);
     return elements;
