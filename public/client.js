@@ -99,6 +99,12 @@ window.addEventListener("load", () => {
             if (elements)
                 update_card_element(card, elements);
         });
+        socket.on("look_frontCard", (data) => {
+            console.log("Look Front Card", data);
+            const player_number = data.player_number;
+            const card = data.card;
+            show_frontCard(card);
+        });
         // 手札と山札系イベント受信
         socket.on("update_decks", (data) => {
             console.log("Updata Decks:", data);

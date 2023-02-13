@@ -35,6 +35,8 @@ const modal_selected_button_id = "modal_selected_button";
 
 const zoom_overlay_id = "zoom_overlay";
 const zoom_img_id = "zoom_img";
+
+const show_front_id = "look_front";
 //
 
 window.addEventListener("load",() => {

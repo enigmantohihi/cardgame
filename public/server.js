@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = __importDefault(require("socket.io"));
 const config_1 = __importDefault(require("./config"));
-const SCREEN_SIZE = { width: 600, height: 400 };
+const SCREEN_SIZE = { width: 600, height: 480 };
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.default.Server(server);
@@ -246,6 +246,12 @@ io.on("connection", (socket) => {
                 else
                     room.selecting_card2P = null;
             }
+            else if (action == "LookFront") {
+                const card = get_card(data.pos.x, data.pos.y, player_number, room);
+                if (card && card.mode != 0) {
+                    io.to(socket.id).emit("look_frontCard", { player_number: player_number, card: card });
+                }
+            }
         }
     });
     // 山札,手札のイベント処理(ドローや山札に戻すなど)
@@ -259,7 +265,7 @@ io.on("connection", (socket) => {
         const event = data.event; // どのアクションか
         const deck_list = (player_number == "1P") ? room.decks1P : room.decks2P;
         if (event == "Draw") {
-            const card_list = draw_card(data.index, data.front, player_number, room);
+            const card_list = draw_card(data.index, data.front, data.pos, player_number, room);
             if (!card_list)
                 return;
             io.to(roomname).emit("update_decks", { player_number: player_number, event: event, card_list: card_list });
@@ -278,7 +284,7 @@ io.on("connection", (socket) => {
             io.to(roomname).emit("show_decks", { deck: deck_list });
         }
         else if (event == "SelectDraw") {
-            const card_list = select_id_draw(data.id_list, data.front, player_number, room);
+            const card_list = select_id_draw(data.id_list, data.front, data.pos, player_number, room);
             if (!card_list)
                 return;
             io.to(roomname).emit("update_decks", { player_number: player_number, event: event, card_list: card_list });
@@ -435,14 +441,14 @@ function get_card(x, y, player_number, room) {
     console.log("cant get card");
     return false;
 }
-function draw_card(index, front, player_number, room) {
+function draw_card(index, front, pos, player_number, room) {
     const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
     const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
     const card = decks.splice(index, 1)[0];
     if (!card)
         return false;
     card.mode = (front) ? 0 : 1;
-    card.pos = { x: 250, y: 250 };
+    card.move(pos.x, pos.y, 1);
     card.visible = true;
     hands.push(card);
     return [card];
@@ -464,7 +470,7 @@ function back_card(index, player_number, room) {
         room.selected_card2P = null;
     return [back_card];
 }
-function select_id_draw(id_list, front, player_number, room) {
+function select_id_draw(id_list, front, pos, player_number, room) {
     const hands = (player_number == "1P") ? room.hands1P : room.hands2P;
     const decks = (player_number == "1P") ? room.decks1P : room.decks2P;
     const result = [];
@@ -472,12 +478,14 @@ function select_id_draw(id_list, front, player_number, room) {
         const card = decks.find($card => $card.id == id);
         if (card) {
             card.mode = (front) ? 0 : 1;
+            card.move(pos.x, pos.y, 1);
             card.visible = true;
             // デッキの中から選択したカードのインデックスを取得
             const index = decks.indexOf(card);
             decks.splice(index, 1);
             hands.push(card);
             result.push(card);
+            pos.x += 50;
         }
     }
     return result;

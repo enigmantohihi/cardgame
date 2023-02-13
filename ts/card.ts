@@ -3,7 +3,7 @@ interface Size { width: number, height: number }
 interface CardElement { id:number, parent: HTMLElement, img: HTMLImageElement }
 interface Cards { decks: Card[], hands: Card[] }
 type PLAYER_NUMBER = "1P" | "2P" | "Audience";
-type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release";
+type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release" | "LookFront";
 type CardEvent = "Draw" | "Back" | "GetDeck" |"SelectDraw";
 /*
 player_number:PLAYER_NUMBER,
@@ -36,8 +36,10 @@ class Card {
 }
 
 let mouse_pos:Position = {x:0,y:0};
+let draw_pos:Position = {x:100,y:240};
 const keys = {
     A: false,
+    S: false,
 }
 let selected_card: Card | null; // 選択したカード
 let selecting_card: Card | null; // 選択中のカード
@@ -71,14 +73,14 @@ function mouse_down(e:any) {
             pos: {x:offset_pos.x, y:offset_pos.y}
         }
         socket.emit("receive_action", send_data);
-    }
+    } 
     console.log("select call");
-        const send_data = {
-            player_number:my_number,
-            action: "Select" as CardAction,
-            pos: {x:offset_pos.x, y:offset_pos.y}
-        }
-        socket.emit("receive_action", send_data);
+    const send_data = {
+        player_number:my_number,
+        action: "Select" as CardAction,
+        pos: {x:offset_pos.x, y:offset_pos.y}
+    }
+    socket.emit("receive_action", send_data);
 }
 function mouse_move(e:any) {
     const x = e.pageX;
@@ -96,9 +98,25 @@ function mouse_up(e:any) {
     const x = e.pageX;
     const y = e.pageY;
     const offset_pos = offsetPos(x,y);
+    const show_front_img = document.getElementById(show_front_id);
+    if (show_front_img) {
+        close_frontCard();
+    }
+    if (keys.S) {
+        console.log("look front card")
+        const show_front_img = document.getElementById(show_front_id);
+         if(!show_front_img) {
+            const send_data = {
+                player_number:my_number,
+                action: "LookFront" as CardAction,
+                pos: {x:offset_pos.x, y:offset_pos.y}
+            }
+            socket.emit("receive_action", send_data);
+        }
+    }
 
     // マウスを押したところから動かさずにupしていたらRotateイベント呼ぶ
-    if (mouse_pos.x == offset_pos.x && mouse_pos.y == offset_pos.y && !keys.A) {
+    if (mouse_pos.x == offset_pos.x && mouse_pos.y == offset_pos.y && !keys.A && !keys.S) {
         console.log("rotate call");
         const send_data = {
             player_number:my_number,
@@ -120,6 +138,8 @@ function mouse_up(e:any) {
 function key_press(e: any) {
     if(e.key === 'a' || e.key === 'A'){
         keys.A = true;
+    } else if(e.key === 's' || e.key === 'S') {
+        keys.S = true;
     } else if(e.key === 'z' || e.key === 'Z'){
         if(selected_card)zoom_card(selected_card.img_path_list[selected_card.mode]);
     }
@@ -127,6 +147,8 @@ function key_press(e: any) {
 function key_up(e: any) {
     if(e.key === 'a' || e.key === 'A'){
         keys.A = false;
+    } else if(e.key === 's' || e.key === 'S') {
+        keys.S = false;
     } else if(e.key === 'z' || e.key === 'Z'){
         const overlay = <HTMLElement>document.getElementById(zoom_overlay_id);
         if(overlay.style.display == "block") overlay.style.display = "none";
@@ -158,9 +180,11 @@ function draw_card() {
         player_number:my_number,
         event: "Draw" as CardEvent,
         index:index,
-        front:front
+        front:front,
+        pos:draw_pos
     }
     socket.emit("receive_event", send_data);
+    draw_pos.x = (draw_pos.x + 50)%450;
 }
 
  // 戻すボタンを押した時に呼ぶ
@@ -251,12 +275,37 @@ function selected_draw() {
         player_number:my_number,
         event: "SelectDraw" as CardEvent,
         id_list:modal_select_id,
-        front:front
+        front:front,
+        pos:draw_pos
     }
     socket.emit("receive_event", send_data);
 
     modal_select_id = [];
+    draw_pos.x = (draw_pos.x + 50)%450;
 }
+
+// 裏面のカードの表面を自分だけ見る
+function show_frontCard(card:Card) {
+    const mycard_place = <HTMLElement>document.getElementById(mycard_place_id);
+    const card_element = find_card_element(my_number, card.id);
+    if (!card_element) return;
+    const show_front_img = document.createElement("img");
+    card_element.parent.appendChild(show_front_img);
+    show_front_img.id = show_front_id;
+    show_front_img.style.zIndex = "100";
+    show_front_img.className = "front_card";
+    show_front_img.src = card.img_path_list[0];
+    const size = card.img_size[0];
+    set_element_size(show_front_img, size);
+    const pos: Position = {x:size.width/4,y:-size.height-size.height/4};
+    set_element_pos(show_front_img, pos);
+}
+function close_frontCard() {
+    const show_front_img = document.getElementById(show_front_id);
+    if (!show_front_img) return;
+    show_front_img.remove();
+}
+
 
 function updata_states() {
     const deck_text0 = <HTMLElement>document.getElementById(deck_count_text_id+0);

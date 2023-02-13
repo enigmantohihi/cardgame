@@ -25,6 +25,10 @@
     /* width や height はjsでいじる */
 }
 
+.front_card {
+    position: relative;
+}
+
 .modal {
     padding: 16px;
     overflow-x: scroll;

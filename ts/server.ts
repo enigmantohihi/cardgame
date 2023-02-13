@@ -24,7 +24,7 @@ interface Room  {
     hands2P: Card[] // 2P手札
     decks2P: Card[] // 2P山札
 }
-const SCREEN_SIZE: Size = { width:600, height:400 };
+const SCREEN_SIZE: Size = { width:600, height:480 };
 
 const app = express();
 const server = http.createServer(app);
@@ -251,14 +251,18 @@ io.on("connection", (socket: socketio.Socket) => {
                 if (player_number=="1P") {
                     room.selecting_card1P = card;
                     room.selected_card1P = card;
-                }
-                else {
+                } else {
                     room.selecting_card2P = card;
                     room.selected_card2P = card;
                 }
             } else if (action=="Release") {
                 if (player_number=="1P") room.selecting_card1P = null;
                 else room.selecting_card2P = null;
+            } else if (action=="LookFront") {
+                const card = get_card(data.pos.x, data.pos.y, player_number, room);
+                if (card && card.mode!=0) {
+                    io.to(socket.id).emit("look_frontCard", {player_number:player_number, card:card});
+                }
             }
         }
     });
@@ -275,7 +279,7 @@ io.on("connection", (socket: socketio.Socket) => {
         const deck_list = (player_number=="1P")? room.decks1P:room.decks2P;
 
         if (event=="Draw") {
-            const card_list = draw_card(data.index, data.front, player_number, room);
+            const card_list = draw_card(data.index, data.front, data.pos, player_number, room);
             if (!card_list) return;
             io.to(roomname).emit("update_decks", {player_number:player_number, event:event, card_list:card_list});
             io.to(roomname).emit("get_decks", {player_number:player_number, deck_length:deck_list.length});
@@ -288,7 +292,7 @@ io.on("connection", (socket: socketio.Socket) => {
             if (!deck_list) return;
             io.to(roomname).emit("show_decks", { deck:deck_list });
         } else if (event=="SelectDraw") {
-            const card_list = select_id_draw(data.id_list, data.front, player_number, room);
+            const card_list = select_id_draw(data.id_list, data.front,data.pos, player_number, room);
             if (!card_list) return;
             io.to(roomname).emit("update_decks", {player_number:player_number, event:event, card_list:card_list});
             io.to(roomname).emit("get_decks", {player_number:player_number, deck_length:deck_list.length});
@@ -423,7 +427,7 @@ class Card {
     }
 }
 
-type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release";
+type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release" | "LookFront";
 type CardEvent = "Draw" | "Back" | "GetDeck" | "SelectDraw";
 ////
 function convert_card(card_data:any[]) {
@@ -457,13 +461,13 @@ function get_card(x:number, y:number, player_number:PLAYER_NUMBER, room:Room) {
     return false;
 }
 
-function draw_card(index:number, front:boolean, player_number:PLAYER_NUMBER, room:Room) {
+function draw_card(index:number, front:boolean, pos:Position, player_number:PLAYER_NUMBER, room:Room) {
     const hands = (player_number=="1P")?room.hands1P:room.hands2P;
     const decks = (player_number=="1P")?room.decks1P:room.decks2P;
     const card = decks.splice(index, 1)[0];
     if (!card) return false;
     card.mode = (front)?0:1;
-    card.pos = {x:250,y:250};
+    card.move(pos.x,pos.y,1);
     card.visible = true;
     hands.push(card);
     return [card];
@@ -485,7 +489,7 @@ function back_card(index:number, player_number:PLAYER_NUMBER, room:Room) {
     return [back_card];
 }
 
-function select_id_draw(id_list:number[], front:boolean, player_number:PLAYER_NUMBER, room:Room) {
+function select_id_draw(id_list:number[], front:boolean, pos:Position, player_number:PLAYER_NUMBER, room:Room) {
     const hands = (player_number=="1P")?room.hands1P:room.hands2P;
     const decks = (player_number=="1P")?room.decks1P:room.decks2P;
     const result:Card[] = [];
@@ -493,12 +497,14 @@ function select_id_draw(id_list:number[], front:boolean, player_number:PLAYER_NU
         const card = decks.find($card => $card.id == id);
         if (card) {
             card.mode = (front)?0:1;
+            card.move(pos.x,pos.y,1);
             card.visible = true;
             // デッキの中から選択したカードのインデックスを取得
             const index = decks.indexOf(card);
             decks.splice(index,1);
             hands.push(card);
             result.push(card);
+            pos.x += 50;
         }
     }
     return result;
