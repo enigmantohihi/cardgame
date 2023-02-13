@@ -110,8 +110,12 @@ window.addEventListener("load", () => {
         socket.on("update_decks", (data:any) => {
             console.log("Updata Decks:", data);
             const player_number:PLAYER_NUMBER = data.player_number;
+            const event:CardEvent = data.event;
             const card_list:Card[] = data.card_list;
-            transport_card(card_list);
+            const mode = 
+                (event=="Draw"||event=="SelectDraw")?0:
+                (event=="Back")?1:-1;
+            transport_card(card_list, mode);
         });
 
         socket.on("get_decks", (data:any) => {

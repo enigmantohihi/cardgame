@@ -277,12 +277,12 @@ io.on("connection", (socket: socketio.Socket) => {
         if (event=="Draw") {
             const card_list = draw_card(data.index, data.front, player_number, room);
             if (!card_list) return;
-            io.to(roomname).emit("update_decks", {player_number:player_number, card_list:card_list});
+            io.to(roomname).emit("update_decks", {player_number:player_number, event:event, card_list:card_list});
             io.to(roomname).emit("get_decks", {player_number:player_number, deck_length:deck_list.length});
         } else if (event=="Back") {
             const card_list = back_card(data.index, player_number, room);
             if (!card_list) return;
-            io.to(roomname).emit("update_decks", {player_number:player_number, card_list:card_list});
+            io.to(roomname).emit("update_decks", {player_number:player_number, event:event, card_list:card_list});
             io.to(roomname).emit("get_decks", {player_number:player_number, deck_length:deck_list.length});
         } else if (event=="GetDeck") {
             if (!deck_list) return;
@@ -290,7 +290,7 @@ io.on("connection", (socket: socketio.Socket) => {
         } else if (event=="SelectDraw") {
             const card_list = select_id_draw(data.id_list, data.front, player_number, room);
             if (!card_list) return;
-            io.to(roomname).emit("update_decks", {player_number:player_number, card_list:card_list});
+            io.to(roomname).emit("update_decks", {player_number:player_number, event:event, card_list:card_list});
             io.to(roomname).emit("get_decks", {player_number:player_number, deck_length:deck_list.length});
         } 
     });

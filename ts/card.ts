@@ -137,7 +137,7 @@ function key_up(e: any) {
 //(card_place要素の左上角が{x:0,y:0}となるようにする)
 function offsetPos(x:number, y:number) {
     const card_place = <HTMLElement>document.getElementById(mycard_place_id);
-    const card_place_pos = get_element_pos(card_place);
+    const card_place_pos = get_element_AbsolutePos(card_place);
     const result:Position = {
         x: x - card_place_pos.x,
         y: y - card_place_pos.y

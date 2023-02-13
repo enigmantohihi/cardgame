@@ -1,10 +1,10 @@
-const BOARD_SIZE: Size = { width:800, height:400 };
+const BOARD_SIZE: Size = { width:800, height:480 };
 const BOARD_POS: Position = { x:0, y:0 };
 
-const SCREEN_SIZE: Size = { width:600, height:400 };
+const SCREEN_SIZE: Size = { width:600, height:480 };
 const SCREEN_POS: Position = { x:0, y:0 };
 
-const UIROOT_SIZE: Size = { width:100, height:500};
+const UIROOT_SIZE: Size = { width:100, height:480};
 const UIROOT_POS: Position = { x:625, y:0 };
 
 const DECK_SIZE: Size = { width:90, height:125.72 };
@@ -144,7 +144,6 @@ function create_ui(ui_root:Element) {
 
     create_radio(parent, show_radio_id, "表", "裏");
     const show_button = create_button(parent, show_button_id, "一覧", true);
-    // show_button.onclick = function() { show_decks_call();}
     ui_root.appendChild(parent);
 }
 
@@ -262,9 +261,19 @@ function add_border(element:HTMLElement) {
 }
 
 // 要素のページ内の絶対位置を取得
-function get_element_pos(element:HTMLElement) {
+function get_element_AbsolutePos(element:HTMLElement) {
     const x = element.getBoundingClientRect().left + window.pageXOffset;
     const y = element.getBoundingClientRect().top + window.pageYOffset;
+    const pos:Position = {x:x, y:y};
+    return pos;
+}
+function get_element_RelativePos(element:HTMLElement) {
+    const parentElemnt = <HTMLElement>element.parentElement;
+    if (!parentElemnt) return;
+    const parent_pos = get_element_AbsolutePos(parentElemnt);
+    const this_pos = get_element_AbsolutePos(element);
+    const x = this_pos.x - parent_pos.x;
+    const y = this_pos.y - parent_pos.y;
     const pos:Position = {x:x, y:y};
     return pos;
 }
@@ -325,19 +334,22 @@ function reverse_pos(parent_size:Size, this_size:Size, this_pos:Position, revers
 
 function get_deck_pos(id:number) {
     const deck = <HTMLElement>document.getElementById(`deck${id}`);
-    console.log("deck pos=", get_element_pos(deck));
-    return get_element_pos(deck);
+    console.log("deck pos=", get_element_RelativePos(deck));
+    return get_element_RelativePos(deck);
 }
-
 function set_element_visible(card:Card, element:HTMLElement) {
     if (card.visible) element.classList.remove("d-none");
     else element.classList.add("d-none");
 }
+function set_element_angle(elements:CardElement, angle:number) {
+    elements.img.style.transform = `rotate(${angle}deg)`;
+}
 // 角度やモードチェンジしたときの画像をもとにカードのサイズ計算,更新
 function set_element_mode(card:Card, elements:CardElement) {
     const img_size = card.img_size[card.mode];
-    elements.img.style.transform = `rotate(${card.angle}deg)`;
-    if (card.angle==90) {
+    const angle = card.angle;
+    // elements.img.style.transform = `rotate(${angle}deg)`;
+    if (angle==90) {
         set_element_size(elements.parent, {width:img_size.height, height:img_size.width});
         const n = (img_size.width < img_size.height)?1:-1;
         const x = n*(Math.abs(img_size.width-img_size.height)/2);
@@ -364,4 +376,24 @@ function adjust_input(input_element: HTMLInputElement) {
     } else if (mydeck_count < value) {
         input_element.value = String(mydeck_count);
     }
+}
+
+function reverse_cardPos(card:Card): Position {
+    const player_number:PLAYER_NUMBER = (my_number=="1P" || my_number=="Audience")?"1P":"2P";
+    const isMy = (card.owner==player_number);
+    if (!isMy) {
+        const x = SCREEN_SIZE.width - card.pos.x - card.parent_size.width;
+        const y = SCREEN_SIZE.height - card.pos.y - card.parent_size.height;
+        return {x:x, y:y};
+    }
+    return {x:card.pos.x, y:card.pos.y};
+}
+function reverse_cardAngle(card:Card) {
+    const player_number:PLAYER_NUMBER = (my_number=="1P" || my_number=="Audience")?"1P":"2P";
+    const isMy = (card.owner==player_number);
+    if (!isMy) {
+        const angle = card.angle+180;
+        return angle;
+    }
+    return card.angle;
 }

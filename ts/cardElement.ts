@@ -40,27 +40,49 @@ function create_card_element(card:Card) {
 function update_card_element(card:Card, elements:CardElement) {
     set_element_size(elements.parent, card.parent_size);
     set_element_size(elements.img, card.img_size[card.mode]);
+    set_element_angle(elements, reverse_cardAngle(card));
     set_element_mode(card, elements);
-    set_element_pos(elements.parent, card.pos);
+    set_element_pos(elements.parent, reverse_cardPos(card));
     set_element_visible(card, elements.parent);
     elements.img.src = card.img_path_list[card.mode];
 }
 
 // 山札と手札間でカードが移動したときに呼ぶ
-function transport_card(cards: Card[]) {
-    // const player_number:PLAYER_NUMBER = (my_number=="1P" || my_number=="Audience")?"1P":"2P";
+function transport_card(cards: Card[], mode:number=0) {
     for (const card of cards) {
         const id = card.id;
         const element = find_card_element(card.owner, id);
         if (element) {
             update_card_element(card, element);
+            // 山札要素の位置を取得
+            const player_number:PLAYER_NUMBER = (my_number=="1P" || my_number=="Audience")?"1P":"2P";
+            const deck_pos = <Position>((player_number==card.owner)?get_deck_pos(1):get_deck_pos(0));
+            if (mode==0) {
+                const start_pos = deck_pos;
+                const end_pos = reverse_cardPos(card);
+                move_animation(element.parent, start_pos, end_pos);
+            } else {
+                const parent = element.parent.parentElement;
+                if (!parent) return;
+                const clone = clone_element(card, parent);
+                const start_pos = reverse_cardPos(card);
+                const end_pos = deck_pos;
+                move_animation(clone.parent, start_pos, end_pos);
+            }
         }
     }
 }
 
 // デッキと場の間の移動アニメーション
-function move_animation(card:Card, element:CardElement, ) {
-
+function move_animation(element:HTMLElement, start_pos: Position, end_pos: Position){
+    element.animate(
+        [
+            {"left":start_pos.x + "px", "top":start_pos.y + "px"},
+            {"left":end_pos.x + "px", "top":end_pos.y + "px"},
+        ],
+        {
+            duration: 200,
+        });
 }
 
 // カードのidと所有者idから検索
@@ -73,4 +95,16 @@ function find_card_element(owner:PLAYER_NUMBER, target_id:number) {
         }
     }
     return false; // 見つからなかったらfalseを返す
+}
+
+function clone_element(card:Card, parent:HTMLElement) {
+    console.log("clone");
+    const clone = create_card_element(card);
+    clone.parent.classList.remove("d-none")
+    parent.appendChild(clone.parent);
+    window.setTimeout(function() {
+        console.log("animation終了")
+        clone.parent.remove();
+    }, 200);
+    return clone;
 }
