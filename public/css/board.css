@@ -16,6 +16,10 @@ header {
     position: absolute;
 }
 
+.hand_place {
+    position: absolute;
+}
+
 .deck {
     position: absolute;
 }

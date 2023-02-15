@@ -290,6 +290,9 @@ io.on("connection", (socket) => {
             io.to(roomname).emit("update_decks", { player_number: player_number, event: event, card_list: card_list });
             io.to(roomname).emit("get_decks", { player_number: player_number, deck_length: deck_list.length });
         }
+        else if (event == "Shuffle") {
+            deck_shuffle(player_number, room);
+        }
     });
 });
 const PORT = process.env.PORT || (0, config_1.default)();
@@ -489,4 +492,15 @@ function select_id_draw(id_list, front, pos, player_number, room) {
         }
     }
     return result;
+}
+function deck_shuffle(player_number, room) {
+    let decks = (player_number == "1P") ? room.decks1P : room.decks2P;
+    const shuffle = (array) => {
+        for (let i = array.length - 1; i >= 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    };
+    decks = shuffle(decks);
 }

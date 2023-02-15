@@ -282,6 +282,14 @@ function close_frontCard() {
         return;
     show_front_img.remove();
 }
+function shuffle_call() {
+    // serverに送信
+    const send_data = {
+        player_number: my_number,
+        event: "Shuffle",
+    };
+    socket.emit("receive_event", send_data);
+}
 function updata_states() {
     const deck_text0 = document.getElementById(deck_count_text_id + 0);
     const deck_text1 = document.getElementById(deck_count_text_id + 1);

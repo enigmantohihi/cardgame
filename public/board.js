@@ -7,12 +7,15 @@ const UIROOT_SIZE = { width: 100, height: 480 };
 const UIROOT_POS = { x: 625, y: 0 };
 const DECK_SIZE = { width: 90, height: 125.72 };
 const DECK_POS = { x: 480, y: 20 };
+const HAND_SIZE = { width: SCREEN_SIZE.width, height: 150 };
+const HAND_POS = { x: 0, y: SCREEN_SIZE.height - HAND_SIZE.height };
 // 生成する要素のid名
 const board_root_id = "board_root";
 const mycard_place_id = "my_card_place";
 const othercard_place_id = "other_card_place";
 const deck_id = "deck";
 const deck_count_text_id = "deck_count_text";
+const shuffle_button_id = "shuffle_button";
 const deck_index_input_id = "draw_index_input";
 const draw_radio_id = "draw_radio";
 const draw_button_id = "draw_button";
@@ -72,9 +75,10 @@ function create_board(root, type = 0) {
     const ui_root = document.createElement("div");
     ui_root.classList.add("ui_root");
     add_border(ui_root);
-    const uiroot_pos = (type == 1) ? UIROOT_POS : reverse_pos(BOARD_SIZE, UIROOT_SIZE, UIROOT_POS, false, true);
+    const uiroot_size = (type == 1) ? UIROOT_SIZE : { width: 100, height: SCREEN_SIZE.height };
+    set_element_size(ui_root, uiroot_size);
+    const uiroot_pos = (type == 1) ? UIROOT_POS : reverse_pos(BOARD_SIZE, uiroot_size, UIROOT_POS, false, true);
     set_element_pos(ui_root, uiroot_pos);
-    set_element_size(ui_root, UIROOT_SIZE);
     board.appendChild(ui_root);
     if (type == 1) {
         create_ui(ui_root);
@@ -108,27 +112,49 @@ function create_board(root, type = 0) {
     card_place.classList.add("h-100");
     card_place.id = (type == 0) ? othercard_place_id : mycard_place_id; //`${card_place_id}${type}`;
     screen.appendChild(card_place);
+    // 手札置き場(相手の手札置き場は見えないようにする)
+    const hand_place = document.createElement("div");
+    hand_place.classList.add("hand_place");
+    hand_place.classList.add("bg-primary");
+    hand_place.style.zIndex = (type == 1) ? "0" : "2";
+    add_border(hand_place, 1);
+    set_element_size(hand_place, HAND_SIZE);
+    const hand_pos = (type == 1) ? HAND_POS : reverse_pos(SCREEN_SIZE, HAND_SIZE, HAND_POS);
+    set_element_pos(hand_place, hand_pos);
+    screen.appendChild(hand_place);
 }
 function create_ui(ui_root) {
     const parent = document.createElement("div");
     parent.classList.add("text-center");
+    // シャッフルボタン
+    const shuffle_button = create_button(parent, shuffle_button_id, "シャッフル");
+    shuffle_button.classList.add("mt-2");
+    shuffle_button.style.height = "50%";
+    shuffle_button.style.fontSize = "60%";
+    shuffle_button.onclick = function () { shuffle_call(); };
+    create_hr(parent, 0, 2);
     const deck_index_input = create_input_number(parent, deck_index_input_id);
     deck_index_input.oninput = function () { set_input_index(deck_index_input); };
     set_input_index(deck_index_input);
     create_radio(parent, draw_radio_id, "表", "裏");
     const draw_button = create_button(parent, draw_button_id, "引く");
     draw_button.onclick = function () { draw_card(); };
-    parent.appendChild(document.createElement("hr"));
+    create_hr(parent, 0, 2);
     const back_index_input = create_input_number(parent, back_index_input_id);
     back_index_input.oninput = function () { set_input_index(back_index_input); };
     set_input_index(back_index_input);
     create_radio(parent, back_radio_id, "上", "下");
     const back_button = create_button(parent, back_button_id, "戻す");
     back_button.onclick = function () { back_card(); };
-    parent.appendChild(document.createElement("hr"));
+    create_hr(parent, 0, 2);
     create_radio(parent, show_radio_id, "表", "裏");
     const show_button = create_button(parent, show_button_id, "一覧", true);
     ui_root.appendChild(parent);
+}
+function create_hr(parent, mx = 0, my = 0) {
+    const hr = document.createElement("hr");
+    hr.className = `mx-${mx} my-${my}`;
+    parent.appendChild(hr);
 }
 function create_input_number(parent, name) {
     const p = document.createElement("p");
@@ -170,7 +196,7 @@ function create_radio(parent, name, text1, text2) {
 function create_button(parent, id, text, modal = false) {
     if (modal) {
         const div = document.createElement("div");
-        const button = `<button id="${id}" type="button" class="btn btn-primary w-80 mb-1" onclick="show_decks_call()" data-bs-toggle="modal" data-bs-target="#${deck_list_modal_id}">${text}</button>`;
+        const button = `<button id="${id}" type="button" class="btn btn-primary w-80" onclick="show_decks_call()" data-bs-toggle="modal" data-bs-target="#${deck_list_modal_id}">${text}</button>`;
         div.innerHTML = button;
         parent.appendChild(div);
         return div;
@@ -179,7 +205,7 @@ function create_button(parent, id, text, modal = false) {
         const button = document.createElement("button");
         button.id = id;
         button.type = "button";
-        button.className = "btn btn-primary w-80 mb-1";
+        button.className = "btn btn-primary w-80";
         button.textContent = text;
         parent.appendChild(button);
         return button;
@@ -232,10 +258,9 @@ function zoom_card(img_path) {
     const img = document.getElementById(zoom_img_id);
     img.src = img_path;
 }
-function add_border(element) {
-    element.classList.add("bg-light");
+function add_border(element, width = 2) {
     element.classList.add("border");
-    element.classList.add("border-2");
+    element.classList.add(`border-${width}`);
     element.classList.add("border-dark");
     element.classList.add("rounded");
 }

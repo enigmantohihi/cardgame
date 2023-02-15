@@ -4,7 +4,7 @@ interface CardElement { id:number, parent: HTMLElement, img: HTMLImageElement }
 interface Cards { decks: Card[], hands: Card[] }
 type PLAYER_NUMBER = "1P" | "2P" | "Audience";
 type CardAction = "Move" | "Rotate" | "ChangeMode" | "Select" | "Release" | "LookFront";
-type CardEvent = "Draw" | "Back" | "GetDeck" |"SelectDraw";
+type CardEvent = "Draw" | "Back" | "GetDeck" |"SelectDraw" | "Shuffle";
 /*
 player_number:PLAYER_NUMBER,
 action:Action,
@@ -304,6 +304,15 @@ function close_frontCard() {
     const show_front_img = document.getElementById(show_front_id);
     if (!show_front_img) return;
     show_front_img.remove();
+}
+
+function shuffle_call() {
+    // serverに送信
+    const send_data = {
+        player_number:my_number,
+        event: "Shuffle" as CardEvent,
+    }
+    socket.emit("receive_event", send_data);
 }
 
 

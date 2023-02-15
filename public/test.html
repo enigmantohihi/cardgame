@@ -6,14 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test</title>
 
-    <link type="text/css" rel="stylesheet" href="./css/bootstrap.min.css">
-    <link type="text/css" rel="stylesheet" href="./css/card.css">
-    <link type="text/css" rel="stylesheet" href="./css/board.css">
-    <script type="text/javascript" src="./js/bootstrap.min.js"></script>
-    <script src="./client.js"></script>
-    <script src="./board.js"></script>
-    <script src="./deck.js"></script>
-    <script src="./card.js"></script>
 </head>
 <body>
 <header>
@@ -38,10 +30,42 @@
     </div>
 </main>
 <script>
+class Unko {
+    constructor(id,name) {
+        this.id = id;
+        this.name = name;
+    }
+}
 window.addEventListener("load", () => {
-    on_board();
-    on_input_file();
+    const unko0 = new Unko(0,"A");
+    const unko1 = new Unko(1,"B");
+    const unko2 = new Unko(2,"C");
+    const unko3 = new Unko(3,"D");
+    const unko4 = new Unko(4,"E");
+    let unkos = [];
+    unkos.push(unko0);
+    unkos.push(unko1);
+    unkos.push(unko2);
+    unkos.push(unko3);
+    unkos.push(unko4);
+    console.log("before:");
+    print_array(unkos);
+    unkos = shuffle(unkos);
+    console.log("after:");
+    print_array(unkos);
 });
+function print_array(array) {
+    for (const unko of array) {
+        console.log(unko);
+    }
+}
+function shuffle (array) {
+  for (let i = array.length - 1; i >= 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
 </script>
 </body>
 </html>
