@@ -3,7 +3,6 @@ import http from "http";
 import socketio from "socket.io";
 import path from "path";
 import get_port from "./config";
-import { type } from "os";
 
 interface User {
     id: string,

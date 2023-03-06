@@ -1,0 +1,18 @@
+{
+    "back_img_path": "https://4.bp.blogspot.com/-A_98ygeh-hs/WRLiKxndvtI/AAAAAAABEKo/qNM7t47lNCw4Sq0hEwJH5xhUaN8lnJf5gCLcB/s800/card_back.png",
+    "main": {
+        "cards": [
+            { "img_path": "", "count": 0},
+            { "img_path": "", "count": 0},
+            { "img_path": "", "count": 0},
+            { "img_path": "", "count": 0}
+        ]
+    },
+    "other": {
+        "cards": [
+            { "img_path": [
+                "",
+                ""], "count": 0}
+        ]
+    }
+}
